@@ -8,57 +8,103 @@
   </head>
 
   <body class="m-0 p-0 bg-gray-100">
+    <!-- หัวข้อ -->
     <div class="text-center mt-10">
-      <h1 class="text-5xl font-bold text-[#333333]">Parking Space</h1>
+      <h1 class="text-4xl md:text-5xl font-bold text-[#333333]">Parking Space</h1>
     </div>
 
     <!-- ลานจอดรถ -->
-    <div class="flex items-center justify-center mt-20">
-      <div class="grid grid-cols-4 gap-5">
-        <!-- ช่องว่าง -->
-        <div class="w-24 h-36 bg-[#BAD0FD] rounded-xl"></div>
-        <div class="w-24 h-36 bg-[#BAD0FD] rounded-xl"></div>
-        <div class="w-24 h-36 bg-[#BAD0FD] rounded-xl"></div>
-
-        <!-- รถ -->
-        <div class="relative w-24 h-36">
-          <img src="image/Car.png" alt="Car" class="absolute inset-0 m-auto" />
+    <div class="flex flex-col items-center justify-center mt-8 space-y-0 max-md:5">
+      <!-- แถวจอดรถ1 -->
+      <div class="grid grid-cols-4 gap-0">
+        <!-- ช่องจอดที่1 -->
+        <div
+      class="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+    >
+      <div class="w-20 h-28 sm:w-20 sm:h-32 md:w-24 md:h-36 bg-[#BAD0FD]"></div>
+    </div>
+        <!-- ช่องจอดที่2 -->
+        <div
+      class="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+    >
+      <div class="w-20 h-28 sm:w-20 sm:h-32 md:w-24 md:h-36 bg-[#BAD0FD]"></div>
+    </div>
+        <!-- ช่องจอดที่3 -->
+        <div
+      class="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+    >
+      <div class="w-20 h-28 sm:w-20 sm:h-32 md:w-24 md:h-36 bg-[#BAD0FD]"></div>
+    </div>
+        <!-- ช่องจอดที่4 -->
+        <div
+          class="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+        >
+          <img
+            src="image/Car.png"
+            alt="Car"
+            class="w-32 h-36 md:w-36 md:h-40 m-auto"
+          />
         </div>
+      </div>
 
-        <!-- ช่องว่าง -->
-        <div class="w-24 h-36 bg-[#BAD0FD] rounded-xl"></div>
-
-        <!-- รถ -->
-        <div class="relative w-24 h-36">
-          <img src="image/Car.png" alt="Car" class="absolute inset-0 m-auto" />
+      <!-- แถวจอดรถ2 -->
+      <div class="grid grid-cols-4 gap-0">
+        <!-- ช่องจอดที่5 -->
+        <div
+      class="border border-b-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+    >
+      <div class="w-20 h-28 sm:w-20 sm:h-32 md:w-24 md:h-36 bg-[#BAD0FD]"></div>
+    </div>
+        <!-- ช่องจอดที่6 -->
+        <div
+          class="border border-b-0 border-dashed border-gray-500 md:w-40 md:h-40 flex items-center justify-center"
+        >
+          <img
+            src="image/Car.png"
+            alt="Car"
+            class="w-32 h-36 md:w-36 md:h-40 m-auto"
+          />
         </div>
-
-        <!-- ช่องว่าง -->
-        <div class="w-24 h-36 bg-[#BAD0FD] rounded-xl"></div>
-        <div class="w-24 h-36 bg-[#BAD0FD] rounded-xl"></div>
+        <!-- ช่องจอดที่7 -->
+        <div
+      class="border border-b-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+    >
+      <div class="w-20 h-28 sm:w-20 sm:h-32 md:w-24 md:h-36 bg-[#BAD0FD]"></div>
+    </div>
+        <!-- ช่องจอดที่8 -->
+        <div
+      class="border border-b-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+    >
+      <div class="w-20 h-28 sm:w-20 sm:h-32 md:w-24 md:h-36 bg-[#BAD0FD]"></div>
+    </div>
       </div>
     </div>
 
-    <div class="flex justify-end mx-40 my-5">
-      <span class="mx-3"
-        ><h5>
-          <img src="image/Car.png" alt="car" class="inline-block w-15 h-10" />
-          : Busy
-        </h5></span
-      >
-
-      <span
-        ><h5>
-          <img
-            src="image/free_space.png"
-            alt="car"
-            class="inline-block w-15 h-10 me-2"
-          />: Free
-        </h5></span>
+    <!-- คำอธิบายสถานะ -->
+    <div class="flex justify-center mt-10">
+      <div class="w-full md:w-[50%] flex justify-center md:justify-end text-sm md:text-lg space-x-3">
+        <!-- Busy -->
+        <div class="flex items-center space-x-2">
+          <img src="image/Car.png" alt="Car" class="w-8 h-8 md:w-10 md:h-10" />
+          <span class="font-medium text-gray-700">: Busy</span>
+        </div>
+        <!-- Free -->
+        <div class="flex items-center space-x-2">
+          <div
+            class="w-8 h-8 md:w-10 md:h-10 bg-[#BAD0FD] rounded-lg border border-gray-500"
+          ></div>
+          <span class="font-medium text-gray-700">: Free</span>
+        </div>
+      </div>
     </div>
 
-    <div>
-        
+    <!-- ปุ่มกด -->
+    <div class="flex justify-center mt-5">
+      <button
+        class="w-72 md:w-96 h-10 md:h-12 bg-[#1E3A8A] text-white font-semibold text-base md:text-lg rounded-xl shadow-lg hover:bg-blue-800"
+      >
+        Access the parking area
+      </button>
     </div>
   </body>
 </html>
