@@ -6,16 +6,28 @@
     <title>User</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-
   <body class="m-0 p-0 bg-gray-100">
-    <div class="flex flex-col items-center m-auto w-1/2 bg-slate-600">
-      <div class="bg-[#BAD0FD] rounded-full w-32 max-md:w-24">
-        <img src="image/account.png" alt="account" />
+    <div
+      class="flex flex-col items-center m-auto w-1/2"
+    >
+      <div class="bg-[#BAD0FD] rounded-full w-32 max-md:w-[6rem] mt-8 relative z-10">
+        <img
+          src="image/account.png"
+          alt="account"
+          class="w-full h-full object-cover rounded-full"
+        />
       </div>
-      <div class="bg-[#BAD0FD] rounded-sm w-3/6 max-md:w-72">
-        <div class="flex justify-around mt-14">
-          <p>username :</p>
-          <p>exampleusername</p>
+      <div class="bg-[#BAD0FD] w-[25rem] max-md:w-[22rem] max-md:pt-9 pt-16 p-4 rounded-md shadow-lg absolute top-24 z-0 ">
+        <div class="flex items-center ">
+          <p class="font-semibold text-lg max-md:text-sm">Username &nbsp;  &nbsp; &nbsp; :</p>
+          <p class="text-gray-700 ms-14 max-md:text-sm">exampleusename1234</p>
+        </div>
+        <div class="flex  items-center mt-4">
+          <p class="font-semibold text-lg max-md:text-sm">Email &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; :</p>
+          <p class="text-gray-700 ms-14 max-md:text-sm">example1234@email.com</p>
+        </div>
+        <div class="my-9 justify-items-center">
+          <img src="image/qr-code.png" alt="QR Code" class="w-32" />
         </div>
       </div>
     </div>
