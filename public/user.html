@@ -7,9 +7,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="m-0 p-0 bg-gray-100">
-    <div class="flex flex-col items-center m-auto w-1/2">
+    <div
+      class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD] h-[100px] grid grid-cols-2 items-center px-4 sm:px-8"
+    >
+      <div class="flex w-[50rem] items-center">
+        <img
+          src="/public/image/logo smart parking app 2.png"
+          alt="Smart Parking Logo"
+          class="w-28 max-sm:w-24"
+        />
+        <div class="flex items-center">
+          <p class="text-3xl max-sm:text-2xl pl-[30px] font-bold text-white">
+            User Profile
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col items-center m-auto w-1/2 mt-5 relative">
+      <!-- รูปผู้ใช้งาน -->
       <div
-        class="bg-[#BAD0FD] rounded-full w-32 max-md:w-[6rem] mt-8 relative z-10"
+        class="bg-[#BAD0FD] rounded-full w-32 max-md:w-[7rem] mt-8 relative z-20"
       >
         <img
           src="image/account.png"
@@ -17,14 +35,17 @@
           class="w-full h-full object-cover rounded-full"
         />
       </div>
+
+      <!-- การ์ดข้อมูล -->
       <div
-        class="bg-[#BAD0FD] w-[25rem] max-md:w-[22rem] max-md:pt-9 pt-16 p-4 rounded-md shadow-lg absolute top-24 z-0"
+        class="bg-[#BAD0FD] w-[25rem] max-md:w-[22rem] max-sm:pt-16 pt-16 p-4 rounded-md shadow-lg absolute top-10 max-md:top-7  z-10"
+        style="margin-top: 4rem"
       >
         <div class="flex items-center">
           <p class="font-semibold text-lg max-md:text-sm">
             Username &nbsp; &nbsp; &nbsp; :
           </p>
-          <p class="text-gray-700 ms-14 max-md:text-sm">exampleusename1234</p>
+          <p class="text-gray-700 ms-14 max-md:text-sm">exampleusername1234</p>
         </div>
         <div class="flex items-center mt-4">
           <p class="font-semibold text-lg max-md:text-sm">
