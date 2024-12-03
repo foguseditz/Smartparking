@@ -8,27 +8,114 @@
   </head>
 
   <body class="m-0 p-0 bg-gray-100">
-    <div
-      class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD] h-[100px] grid grid-cols-2 items-center px-4 sm:px-8 overflow-hidden"
-    >
-      <div class="flex w-[50rem] items-center">
-        <img
-          src="/public/image/logo smart parking app 2.png"
-          alt="Smart Parking Logo"
-          class="w-28 max-sm:w-24"
-        />
-        <div class="flex items-center">
-          <p class="text-3xl max-sm:text-2xl pl-[30px] font-bold text-white">
-            User Profile
-          </p>
+<nav class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD] sticky w-full top-0 left-0 z-50">
+      <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+        <!-- โลโก้ -->
+        <a href="home.html" class="flex items-center space-x-3 rtl:space-x-reverse">
+          <img
+            src="/public/image/logo smart parking app 2.png"
+            alt="Smart Parking Logo"
+            class="w-20 max-sm:w-16"
+          />
+          <span class="text-2xl max-sm:text-xl font-bold text-white">Smart Parking</span>
+        </a>
+
+        <!-- ปุ่มเมนูสำหรับมือถือ -->
+        <button
+          id="menu-toggle"
+          type="button"
+          class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-blue-950 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          aria-controls="navbar-default"
+          aria-expanded="false"
+        >
+          <svg
+            class="w-5 h-5"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 17 14"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M1 1h15M1 7h15M1 13h15"
+            />
+          </svg>
+        </button>
+
+        <!-- เมนู -->
+        <div class="hidden w-full md:block md:w-auto" id="navbar-default">
+          <ul class="flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-transparent">
+            <li class="py-2">
+              <a
+                href="home.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Home</a
+              >
+            </li>
+            <li class="py-2">
+              <a
+                href="parking_space.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Parking space</a
+              >
+            </li>
+            <li class=" py-2">
+              <a
+                href="status.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Status</a
+              >
+            </li>
+            <li class=" py-2">
+              <a
+                href="payment.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Payment</a
+              >
+            </li>
+
+            <!-- เปลี่ยนจากรูปภาพเป็นข้อความ "User" สำหรับมือถือ และแสดงไอคอนสำหรับเดสก์ท็อป -->
+            <li class="md:hidden">
+              <a
+                href="user.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+              >
+                User
+              </a>
+            </li>
+            <li class="hidden md:block class=">
+              <a
+                href="user.html"
+              >
+                <img
+                  src="image/account.png"
+                  alt="User Profile"
+                  class="w-8 h-8 md:w-10 md:h-10 rounded-full"
+                />
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
-    </div>
+    </nav>
+
+    <script>
+      // JavaScript สำหรับสลับการแสดงเมนู
+      const menuToggle = document.getElementById("menu-toggle");
+      const navbar = document.getElementById("navbar-default");
+
+      menuToggle.addEventListener("click", () => {
+        navbar.classList.toggle("hidden");
+      });
+    </script>
 
     <div class="flex flex-col items-center m-auto w-1/2 mt-5 relative">
       <!-- รูปผู้ใช้งาน -->
       <div
-        class="bg-[#BAD0FD] rounded-full w-32 max-md:w-[7rem] mt-8 relative z-20"
+        class="bg-[#BAD0FD] rounded-full w-32 max-md:w-28 mt-8 relative z-20"
       >
         <img
           src="image/account.png"

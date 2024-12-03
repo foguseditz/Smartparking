@@ -3,180 +3,212 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-
+    <title>Home</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body>
-    <nav class="bg-#5F93FB">
-      <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-        <div class="relative flex h-16 items-center justify-between">
-          <div class="absolute inset-y-0 left-0 flex items-center sm:hidden">
-            <!-- Mobile menu button-->
-            <button
-              type="button"
-              class="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-              aria-controls="mobile-menu"
-              aria-expanded="false"
-            >
-              <span class="absolute -inset-0.5"></span>
-              <span class="sr-only">Open main menu</span>
-              <!--
-                  Icon when menu is closed.
-      
-                  Menu open: "hidden", Menu closed: "block"
-                -->
-              <svg
-                class="block size-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                aria-hidden="true"
-                data-slot="icon"
+  <body class="m-0 p-0 bg-gradient-to-tl from-[#ffff] to-[#63A7FB]">
+    <!-- Navbar -->
+    <nav
+      class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD] sticky w-full top-0 left-0 z-50 border-b-2 border-[#052A61]"
+    >
+      <div
+        class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4"
+      >
+        <a
+          href="home.html"
+          class="flex items-center space-x-3 rtl:space-x-reverse"
+        >
+          <img
+            src="/public/image/logo smart parking app 2.png"
+            alt="Smart Parking Logo"
+            class="w-20 max-sm:w-16"
+          />
+          <span class="text-2xl max-sm:text-xl font-bold text-white"
+            >Smart Parking</span
+          >
+        </a>
+        <button
+          id="menu-toggle"
+          type="button"
+          class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-blue-950 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          aria-controls="navbar-default"
+          aria-expanded="false"
+        >
+          <svg
+            class="w-5 h-5"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 17 14"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M1 1h15M1 7h15M1 13h15"
+            />
+          </svg>
+        </button>
+        <div class="hidden w-full md:block md:w-auto" id="navbar-default">
+          <ul
+            class="flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-transparent"
+          >
+            <li class="py-2">
+              <a
+                href="home.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Home</a
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-                />
-              </svg>
-              <!--
-                  Icon when menu is open.
-      
-                  Menu open: "block", Menu closed: "hidden"
-                -->
-              <svg
-                class="hidden size-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                aria-hidden="true"
-                data-slot="icon"
+            </li>
+            <li class="py-2">
+              <a
+                href="parking_space.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Parking space</a
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M6 18 18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-          <div
-            class="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start"
-          >
-            <div class="flex shrink-0 items-center">
-              <img
-                class="h-8 w-auto"
-                src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=500"
-                alt="Your Company"
-              />
-            </div>
-            <div class="hidden sm:ml-6 sm:block">
-              <div class="flex space-x-4">
-                <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-                <a
-                  href="#"
-                  class="rounded-md bg-gray-900 px-3 py-2 text-sm font-medium text-white"
-                  aria-current="page"
-                  >Dashboard</a
-                >
-                <a
-                  href="#"
-                  class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-                  >Team</a
-                >
-                <a
-                  href="#"
-                  class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-                  >Projects</a
-                >
-                <a
-                  href="#"
-                  class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-                  >Calendar</a
-                >
-              </div>
-            </div>
-          </div>
-          <div
-            class="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0"
-          >
-            <button
-              type="button"
-              class="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-            >
-              <span class="absolute -inset-1.5"></span>
-              <span class="sr-only">View notifications</span>
-              <svg
-                class="size-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="1.5"
-                stroke="currentColor"
-                aria-hidden="true"
-                data-slot="icon"
+            </li>
+            <li class="py-2">
+              <a
+                href="status.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Status</a
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"
+            </li>
+            <li class="py-2">
+              <a
+                href="payment.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Payment</a
+              >
+            </li>
+            <li class="md:hidden">
+              <a
+                href="user.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >User</a
+              >
+            </li>
+            <li class="hidden md:block">
+              <a href="user.html">
+                <img
+                  src="image/account.png"
+                  alt="User Profile"
+                  class="w-8 h-8 md:w-10 md:h-10 rounded-full"
                 />
-              </svg>
-            </button>
-
-            <!-- Profile dropdown -->
-            <div class="relative ml-3">
-              <div>
-                <button
-                  type="button"
-                  class="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-                  id="user-menu-button"
-                  aria-expanded="false"
-                  aria-haspopup="true"
-                >
-                  <span class="absolute -inset-1.5"></span>
-                  <span class="sr-only">Open user menu</span>
-                  <img
-                    class="size-8 rounded-full"
-                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                    alt
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mobile menu, show/hide based on menu state. -->
-      <div class="sm:hidden" id="mobile-menu">
-        <div class="space-y-1 px-2 pb-3 pt-2">
-          <!-- Current: "bg-gray-900 text-white", Default: "text-gray-300 hover:bg-gray-700 hover:text-white" -->
-          <a
-            href="#"
-            class="block rounded-md bg-gray-900 px-3 py-2 text-base font-medium text-white"
-            aria-current="page"
-            >Dashboard</a
-          >
-          <a
-            href="#"
-            class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-            >Team</a
-          >
-          <a
-            href="#"
-            class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-            >Projects</a
-          >
-          <a
-            href="#"
-            class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white"
-            >Calendar</a
-          >
+              </a>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
+
+    <!-- New Section: Description with Image -->
+<section class="py-1">
+  <div
+    class="max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center px-4 py-10"
+  >
+    <!-- Left Text Content -->
+    <div class="text-center md:text-left">
+      <h2 class="text-4xl md:text-6xl font-bold text-[#131F2D] mb-4">
+        Smart Parking Management System
+      </h2>
+      <p class="text-base md:text-lg text-[#131F2D] my-4 md:my-7 w-full md:w-3/4 mx-auto md:mx-0">
+        Welcome to the Smart Parking System – Simple and efficient parking!
+      </p>
+      <button
+        class="px-4 py-2 md:px-6 md:py-3 w-40 md:w-52 bg-[#052A61] text-white font-semibold text-sm md:text-lg rounded-lg shadow-md hover:bg-blue-500"
+      >
+        <a href="login.html" class="w-40">Get Started</a>
+      </button>
+    </div>
+    <!-- Right Image Content -->
+    <div class="sm:flex justify-center hidden ">
+      <img
+        src="image/Parking-header.png"
+        alt="Smart Parking Features"
+        class="w-3/4 md:w-full"
+      />
+    </div>
+  </div>
+</section>
+
+<!-- How to Use Section -->
+<section class="my-10 relative px-4">
+  <h1 class="text-2xl md:text-3xl font-bold text-[#131F2D] text-center mb-12 relative underline sm:no-underline">
+    How to Use
+    <span class="hidden md:block absolute left-[6%] bottom-1/3 w-[36%] h-1 bg-[#131F2D]"></span>
+    <span class="hidden md:block absolute right-[6%] bottom-1/3 w-[36%] h-1 bg-[#131F2D]"></span>
+  </h1>
+  <div class="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 place-items-center gap-4">
+    <!-- Step 1 -->
+    <div class="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto py-4 px-2">
+      <img
+        src="image/Login-step1.png"
+        alt="Step 1"
+        class="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
+      />
+      <h3 class="text-base sm:text-lg font-semibold text-gray-800">Step 1</h3>
+      <p class="text-sm sm:text-gray-600">Sign in</p>
+    </div>
+    <!-- Step 2 -->
+    <div class="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto py-4 px-2">
+      <img
+        src="image/Parking-step2.png"
+        alt="Step 2"
+        class="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
+      />
+      <h3 class="text-base sm:text-lg font-semibold text-gray-800">Step 2</h3>
+      <p class="text-sm sm:text-gray-600">Check parking status</p>
+    </div>
+    <!-- Step 3 -->
+    <div class="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto py-4 px-2">
+      <img
+        src="image/checkin-step3.png"
+        alt="Step 3"
+        class="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
+      />
+      <h3 class="text-base sm:text-lg font-semibold text-gray-800">Step 3</h3>
+      <p class="text-sm sm:text-gray-600">Scan your account QR code to enter</p>
+    </div>
+    <!-- Step 4 -->
+    <div class="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto py-4 px-2">
+      <img
+        src="image/checkout-step4.png"
+        alt="Step 4"
+        class="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
+      />
+      <h3 class="text-base sm:text-lg font-semibold text-gray-800">Step 4</h3>
+      <p class="text-sm sm:text-gray-600">Scan your account QR code when exiting</p>
+    </div>
+    <!-- Step 5 -->
+    <div class="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto py-4 px-2">
+      <img
+        src="image/payment-step5.png"
+        alt="Step 5"
+        class="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
+      />
+      <h3 class="text-base sm:text-lg font-semibold text-gray-800">Step 5</h3>
+      <p class="text-sm sm:text-gray-600">Make payment</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <img
+    src="image/footterBG.png"
+    alt="Footer Background"
+    class="h-full w-full"
+  />
+</footer>
+
+    <script>
+      const menuToggle = document.getElementById("menu-toggle");
+      const navbar = document.getElementById("navbar-default");
+
+      menuToggle.addEventListener("click", () => {
+        navbar.classList.toggle("hidden");
+      });
+    </script>
   </body>
 </html>

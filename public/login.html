@@ -6,66 +6,160 @@
     <title>Smart Car Parking</title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body
-    class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD] h-screen flex items-center justify-center"
-  >
-    <div
-      class="border-2 border-white bg-[#82baff] rounded-md mx-4 sm:mx-[5rem] md:mx-[10rem] lg:mx-[15rem] w-full sm:w-[500px] p-6 flex flex-col items-center"
+  <body class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD]">
+
+    <nav
+      class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD] sticky w-full top-0 left-0 z-50 border-b-2 border-[#052A61]"
     >
-      <!-- Logo -->
-      <img
-        src="/public/image/logo smart parking app 2.png"
-        alt="Smart Parking Logo"
-        class="w-2/4 mb-6"
-      />
-
-      <!-- Heading -->
-      <h1 class="text-2xl sm:text-3xl font-bold text-white mb-6">
-        Smart Car Parking
-      </h1>
-
-      <!-- Email Input -->
-      <div class="w-full mb-6">
-        <input
-          id="email"
-          name="email"
-          placeholder="Email"
-          type="email"
-          autocomplete="email"
-          class="block w-full bg-transparent border-b-2 border-0 py-2 text-white shadow-sm placeholder:text-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xl p-3"
-        />
-      </div>
-
-      <!-- Password Input -->
-      <div class="w-full mb-6">
-        <input
-          id="password"
-          name="password"
-          placeholder="Password"
-          type="password"
-          autocomplete="current-password"
-          class="block w-full bg-transparent border-b-2 border-0 py-2 text-white shadow-sm placeholder:text-white focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-xl p-3"
-        />
-        <p class="text-white text-right underline"> <a href="">Forgot Password?</a></p>
-      </div>
-      <div>
-        <a
-          href="#"
-          class="rounded-md bg-[#1E3A8A] px-[7.5rem] py-2.5 text-lg font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >Sign in</a
-        >
-
-      </div>
-      <div class="mt-8">
-        <a
-        href="/public/register.html"
-        class="rounded-md bg-[#0284C7] px-[5rem] py-2.5 text-lg font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >Create an account</a
+      <div
+        class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4"
       >
+        <a
+          href="home.html"
+          class="flex items-center space-x-3 rtl:space-x-reverse"
+        >
+          <img
+            src="/public/image/logo smart parking app 2.png"
+            alt="Smart Parking Logo"
+            class="w-20 max-sm:w-16"
+          />
+          <span class="text-2xl max-sm:text-xl font-bold text-white"
+            >Smart Parking</span
+          >
+        </a>
+        <button
+          id="menu-toggle"
+          type="button"
+          class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-blue-950 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
+          aria-controls="navbar-default"
+          aria-expanded="false"
+        >
+          <svg
+            class="w-5 h-5"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 17 14"
+          >
+            <path
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M1 1h15M1 7h15M1 13h15"
+            />
+          </svg>
+        </button>
+        <div class="hidden w-full md:block md:w-auto" id="navbar-default">
+          <ul
+            class="flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-transparent"
+          >
+            <li class="py-2">
+              <a
+                href="home.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Home</a
+              >
+            </li>
+            <li class="py-2">
+              <a
+                href="parking_space.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Parking space</a
+              >
+            </li>
+            <li class="py-2">
+              <a
+                href="status.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Status</a
+              >
+            </li>
+            <li class="py-2">
+              <a
+                href="payment.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >Payment</a
+              >
+            </li>
+            <li class="md:hidden">
+              <a
+                href="user.html"
+                class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
+                >User</a
+              >
+            </li>
+            <li class="hidden md:block">
+              <a href="user.html">
+                <img
+                  src="image/account.png"
+                  alt="User Profile"
+                  class="w-8 h-8 md:w-10 md:h-10 rounded-full"
+                />
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
+    </nav>
 
-      <!-- Submit Button (if needed) -->
-      <!-- Add a submit button or any other content as needed here -->
+    <div class="h-screen flex items-center justify-center">
+      <div
+        class="border-2 border-white bg-[#82baff] rounded-md mx-4 sm:mx-[5rem] md:mx-[10rem] lg:mx-[15rem] w-full sm:w-[500px] p-6 flex flex-col items-center"
+      >
+        <!-- Logo -->
+        <img
+          src="/public/image/logo smart parking app 2.png"
+          alt="Smart Parking Logo"
+          class="w-2/4 mb-6"
+        />
+
+        <!-- Heading -->
+        <h1 class="text-2xl sm:text-3xl font-bold text-white mb-6">
+          Smart Car Parking
+        </h1>
+
+        <!-- Email Input -->
+        <div class="w-full mb-6">
+          <input
+            id="email"
+            name="email"
+            placeholder="Email"
+            type="email"
+            autocomplete="email"
+            class="block w-full bg-transparent border-b-2 border-0 py-2 text-white shadow-sm placeholder:text-white focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-xl p-3"
+          />
+        </div>
+
+        <!-- Password Input -->
+        <div class="w-full mb-6">
+          <input
+            id="password"
+            name="password"
+            placeholder="Password"
+            type="password"
+            autocomplete="current-password"
+            class="block w-full bg-transparent border-b-2 border-0 py-2 text-white shadow-sm placeholder:text-white focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-xl p-3"
+          />
+          <p class="text-white text-right underline">
+            <a href="">Forgot Password?</a>
+          </p>
+        </div>
+        <div>
+          <a
+            href="parking_space.html"
+            class="rounded-md bg-[#1E3A8A] px-[7.5rem] py-2.5 text-lg font-semibold text-white shadow-sm hover:bg-blue-500"
+            >Sign in</a
+          >
+        </div>
+        <div class="mt-8">
+          <a
+            href="/public/register.html"
+            class="rounded-md bg-[#0284C7] px-[5rem] py-2.5 text-lg font-semibold text-white shadow-sm hover:bg-blue-500"
+            >Create an account</a
+          >
+        </div>
+      </div>
     </div>
   </body>
 </html>
