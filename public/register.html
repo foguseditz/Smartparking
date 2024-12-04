@@ -102,6 +102,15 @@
       </div>
     </nav>
 
+    <script>
+      const menuToggle = document.getElementById("menu-toggle");
+      const navbar = document.getElementById("navbar-default");
+
+      menuToggle.addEventListener("click", () => {
+        navbar.classList.toggle("hidden");
+      });
+    </script>
+
     <div class="h-screen flex items-center justify-center">
       <div
         class="border-2 border-white bg-[#82baff] rounded-md mx-4 sm:mx-[5rem] md:mx-[10rem] lg:mx-[15rem] w-full sm:w-[500px] p-6 flex flex-col items-center"
@@ -177,5 +186,13 @@
         </div>
       </div>
     </div>
+
+    <footer>
+      <img
+        src="image/footter.svg"
+        alt="Footer Background"
+        class="h-full w-full"
+      />
+    </footer>
   </body>
 </html>

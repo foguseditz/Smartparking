@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>status</title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100">
-<nav class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD] sticky w-full top-0 left-0 z-50">
-      <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+  </head>
+
+  <body class="bg-gray-100">
+    <nav
+      class="bg-gradient-to-b from-[#60A5FA] to-[#93C5FD] sticky w-full top-0 left-0 z-50"
+    >
+      <div
+        class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4"
+      >
         <!-- โลโก้ -->
-        <a href="home.html" class="flex items-center space-x-3 rtl:space-x-reverse">
+        <a
+          href="home.html"
+          class="flex items-center space-x-3 rtl:space-x-reverse"
+        >
           <img
             src="/public/image/logo smart parking app 2.png"
             alt="Smart Parking Logo"
             class="w-20 max-sm:w-16"
           />
-          <span class="text-2xl max-sm:text-xl font-bold text-white">Smart Parking</span>
+          <span class="text-2xl max-sm:text-xl font-bold text-white"
+            >Smart Parking</span
+          >
         </a>
 
         <!-- ปุ่มเมนูสำหรับมือถือ -->
@@ -46,7 +56,9 @@
 
         <!-- เมนู -->
         <div class="hidden w-full md:block md:w-auto" id="navbar-default">
-          <ul class="flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-transparent">
+          <ul
+            class="flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 md:bg-transparent"
+          >
             <li class="py-2">
               <a
                 href="home.html"
@@ -61,14 +73,14 @@
                 >Parking space</a
               >
             </li>
-            <li class=" py-2">
+            <li class="py-2">
               <a
                 href="status.html"
                 class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
                 >Status</a
               >
             </li>
-            <li class=" py-2">
+            <li class="py-2">
               <a
                 href="payment.html"
                 class="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold md:p-0"
@@ -86,9 +98,7 @@
               </a>
             </li>
             <li class="hidden md:block class=">
-              <a
-                href="user.html"
-              >
+              <a href="user.html">
                 <img
                   src="image/account.png"
                   alt="User Profile"
@@ -112,20 +122,33 @@
     </script>
 
     <!-- Timer Section -->
-    <div class="mt-10 sm:mt-16 mx-4 sm:mx-auto sm:max-w-[1000px] bg-[#BAD0FD] rounded-md shadow-lg">
+    <div class="h-[38rem] sm:h-[25rem]">
+      <div
+        class="mt-10 sm:mt-16 mx-4 sm:mx-auto sm:max-w-[1000px] bg-[#BAD0FD] rounded-md shadow-lg"
+      >
         <p class="text-center py-10 text-lg sm:text-2xl">
-            <span class="font-bold">Duration :</span> 00 hours 00 minutes 00 seconds
+          <span class="font-bold">Duration :</span> 00 hours 00 minutes 00
+          seconds
         </p>
+      </div>
+
+      <!-- Button Section -->
+      <div class="mt-5 flex justify-center">
+        <a
+          href="payment.html"
+          class="rounded-md bg-[#E83C3F] px-6 sm:px-20 py-2.5 text-base sm:text-lg font-semibold text-white shadow-sm hover:bg-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          Leave Parking Area
+        </a>
+      </div>
     </div>
 
-    <!-- Button Section -->
-    <div class="mt-5 flex justify-center">
-        <a
-            href="#"
-            class="rounded-md bg-[#E83C3F] px-6 sm:px-20 py-2.5 text-base sm:text-lg font-semibold text-white shadow-sm hover:bg-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >
-            Leave Parking Area
-        </a>
-    </div>
-</body>
+    <footer>
+      <img
+        src="image/footter.svg"
+        alt="Footer Background"
+        class="h-full w-full"
+      />
+    </footer>
+  </body>
 </html>
