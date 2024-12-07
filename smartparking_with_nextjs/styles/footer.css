@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.footer {
+margin-top: 5rem;
+  width: 100%;
+  height: fit-content;
+  background-repeat: no-repeat;
+}

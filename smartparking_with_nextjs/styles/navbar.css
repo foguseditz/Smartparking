@@ -1,0 +1,159 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.navbar {
+  background: linear-gradient(to bottom, #60a5fa, #93c5fd);
+  position: sticky;
+  width: 100%;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  border-bottom: 2px solid #052a61;
+  
+}
+
+.navContainer {
+  max-width: 1280px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.logoLink {
+  display: flex;
+  margin-left: 0.75rem;
+  margin-left: 0.875rem;
+  align-items: center;
+}
+
+
+.logoText {
+  font-size: 2rem;
+  line-height: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.menuToggle {
+  display: inline-flex;
+  padding: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.menuToggle:hover {
+  background-color: #f3f4f6;
+}
+
+.menuToggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+.menuIcon {
+  width: 5rem;
+  height: 5rem;
+}
+
+.navMenu {
+  width: 100%;
+}
+
+.navList {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.5rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.navItem {
+  padding: 0.5rem 0;
+}
+
+.navLink {
+  font-size: 19.5px;
+  display: block;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  border-radius: 0.25rem;
+  color: #111827;
+}
+
+.navLink:hover {
+  background-color: #bae6fd;
+  font-weight: 700;
+}
+
+/* Responsive Styles */
+@media (min-width: 768px) {
+  .menuToggle {
+    display: none;
+  }
+
+  .navMenu {
+    width: auto;
+  }
+
+  .navList {
+    flex-direction: row;
+    align-items: center;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    gap: 2rem;
+  }
+
+  .navLink {
+    padding: 0;
+  }
+
+  .navLink:hover {
+    background-color: transparent;
+    color: #052a61;
+    text-decoration: underline;
+    font-weight: 700;
+  }
+
+  .navItemUserMobile {
+    display: none;
+  }
+
+  .navUserDesktop {
+    display: block;
+  }
+}
+
+.menuOpen {
+  display: block;
+}
+
+.menuClosed {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .menuOpen,
+  .menuClosed {
+    display: block;
+  }
+}
+
+.userAvatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+}
