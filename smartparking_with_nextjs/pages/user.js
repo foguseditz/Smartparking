@@ -3,7 +3,6 @@ import Link from "next/link";
 
 export default function user() {
   return (
-    <div className="h-[600px]">
       <div className="flex flex-col items-center m-auto w-1/2 mt-5 mb-40 relative">
         <div className="bg-[#BAD0FD] rounded-full w-32 max-md:w-28 mt-8 relative z-20">
           <Image src="/account.png" alt="account" width={128} height={60} />
@@ -43,6 +42,5 @@ export default function user() {
           </Link>
         </div>
       </div>
-    </div>
   );
 }

@@ -4,7 +4,6 @@ import Link from "next/link";
 export default function Status() {
   return (
     <div >
-      <div className="h-[38rem] sm:h-[35rem]">
         <div className="mt-10 sm:mt-16 mx-4 sm:mx-auto sm:max-w-[1000px] bg-[#BAD0FD] rounded-md shadow-lg">
           <p className="text-center py-10 text-lg sm:text-2xl">
             <span className="font-bold">Duration :</span> 00 hours 00 minutes 00
@@ -21,6 +20,5 @@ export default function Status() {
           </Link>
         </div>
       </div>
-    </div>
   );
 }

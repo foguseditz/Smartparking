@@ -3,7 +3,6 @@ import Link from "next/link";
 
 export default function payment() {
   return (
-    <div>
       <div>
         <div className="mt-10 sm:mt-16 mx-4 sm:mx-auto sm:max-w-[350px] bg-[#BAD0FD] h-[500px] rounded-md place-items-center shadow-lg">
           <div className="w-[300px] pt-3">
@@ -52,6 +51,5 @@ export default function payment() {
           </Link>
         </div>
       </div>
-    </div>
   );
 }
