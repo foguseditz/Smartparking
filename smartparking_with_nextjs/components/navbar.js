@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import styles from "@/styles/navbar.module.css";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -10,27 +11,28 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="navbar">
-      <div className="navContainer">
-        <Link href="/" className="logoLink">
+    <nav className={styles.navbar}>
+      <div className={styles.navContainer}>
+        <Link href="/" className={styles.logoLink}>
           <Image
             src="/logo-smart-parking.png"
             alt="Smart Parking Logo"
-            width={100}
+            width={90}
             height={90}
+            className="max-sm:w-20"
           />
-          <span className="logoText">Smart Parking</span>
+          <span className={styles.logoText}>Smart Parking</span>
         </Link>
         <button
           id="menu-toggle"
           type="button"
-          className="menuToggle"
+          className={styles.menuToggle}
           aria-controls="navbar-default"
           aria-expanded={menuOpen}
           onClick={toggleMenu}
         >
           <svg
-            className="menuIcon"
+            className={styles.menuIcon}
             aria-hidden="true"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -46,43 +48,44 @@ export default function Navbar() {
           </svg>
         </button>
         <div
-          className={`${menuOpen ? "" : "hidden"} w-full md:block md:w-auto`}
+          className={`${
+            menuOpen ? styles.menuOpen : styles.menuClosed
+          } w-full md:block md:w-auto`}
           id="navbar-default"
         >
-          <ul className="navList max-sm:mt-4">
-            <li className="navItem">
-              <Link href="/" className="navLink">
+          <ul className={styles.navList}>
+            <li className={styles.navItem}>
+              <Link href="/" className={styles.navLink}>
                 Home
               </Link>
             </li>
-            <li className="navItem">
-              <Link href="/parking_space" className="navLink">
+            <li className={styles.navItem}>
+              <Link href="/parking_space" className={styles.navLink}>
                 Parking space
               </Link>
             </li>
-            <li className="navItem">
-              <Link href="/status" className="navLink">
+            <li className={styles.navItem}>
+              <Link href="/status" className={styles.navLink}>
                 Status
               </Link>
             </li>
-            <li className="navItem">
-              <Link href="/payment" className="navLink ma">
+            <li className={styles.navItem}>
+              <Link href="/payment" className={styles.navLink}>
                 Payment
               </Link>
             </li>
-            <li className="navItemUserMobile">
-              <Link href="/user" className="navLink">
+            <li className={styles.navItemUserMobile}>
+              <Link href="/user" className={styles.navLink}>
                 User
               </Link>
             </li>
-            <li className="menuClosed navItemUserDesktop">
+            <li className={`${styles.menuClosed} ${styles.navItemUserMobile}`}>
               <Link href="/user">
                 <Image
                   src="/account.png"
                   alt="User Profile"
-                  width={50}
-                  height={50}
-                  className="userAvatar"
+                  width={45}
+                  height={45}
                 />
               </Link>
             </li>
