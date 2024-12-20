@@ -1,14 +1,15 @@
 import Image from "next/image";
-import styles from "@/styles/footer.module.css"
 
 export default function Footer() {
     return (
+      <footer>
         <Image
           src="/footer.svg"
-          alt="Footer_BG"
+          alt="Footer Background"
           width={100}
-          height={500}
-          className={styles.footerbg}
+          height={100}
+          class="h-full w-full"
         />
+      </footer>
     );
 }

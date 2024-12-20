@@ -1,5 +1,8 @@
+import GradientLayout from "@/components/GradientLayout";
+import Layout from "@/components/layout";
 import Image from "next/image";
 import Link from "next/link";
+import Home from ".";
 
 export default function Parking_space() {
   return (
@@ -119,3 +122,11 @@ export default function Parking_space() {
     </>
   );
 }
+
+Parking_space.getLayout = function getLayout(page) {
+  return (
+    <Layout>
+      {page}
+    </Layout>
+  );
+};

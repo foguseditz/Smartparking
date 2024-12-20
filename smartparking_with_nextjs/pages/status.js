@@ -1,4 +1,4 @@
-import Navbar from "@/components/navbar";
+import Layout from "@/components/layout";
 import Link from "next/link";
 
 export default function Status() {
@@ -22,3 +22,11 @@ export default function Status() {
       </div>
   );
 }
+
+Status.getLayout = function getLayout(page) {
+  return (
+    <Layout>
+      {page}
+    </Layout>
+  );
+};

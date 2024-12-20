@@ -1,9 +1,10 @@
+import GradientLayout from "@/components/GradientLayout";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="bg-gradient-to-tl from-white to-[#63A7FB] flex flex-col">
+    <div>
       <section className="py-1">
         <div className="max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center px-4 py-10">
           <div className="text-center md:text-left">
@@ -119,3 +120,12 @@ export default function Home() {
     </div>
   );
 }
+
+
+Home.getLayout = function getLayout(page) {
+  return (
+    <GradientLayout>
+      {page}
+    </GradientLayout>
+  );
+};
