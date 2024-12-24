@@ -16,7 +16,7 @@ export default function Home() {
               parking!
             </p>
             <Link
-              href="/login"
+              href="/auth/login"
               className="px-10 py-3 md:px-11 md:py-3  bg-[#052A61] text-white font-semibold text-sm md:text-lg rounded-lg shadow-md hover:bg-blue-500"
             >
               Get Started
@@ -25,7 +25,7 @@ export default function Home() {
 
           <div className="sm:flex justify-center hidden ">
             <Image
-              src="/Parking-header.png"
+              src="/Parking-header.svg"
               alt="Smart Parking Features"
               className="w-3/4 md:w-full"
               width={500}
@@ -44,10 +44,10 @@ export default function Home() {
         <div className="mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 place-items-center gap-4">
           <div className="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto sm:h-[22rem] py-4 px-2">
             <Image
-              src="/Login-step1.png"
+              src="/step1-login.svg"
               alt="Step 1"
               className="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
-              width={200} // Adjust the width and height as needed
+              width={500} // Adjust the width and height as needed
               height={200}
             />
             <h3 className="text-base sm:text-lg font-semibold text-gray-800">
@@ -58,7 +58,7 @@ export default function Home() {
 
           <div className="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto sm:h-[22rem] py-4 px-2">
             <Image
-              src="/Parking-step2.png"
+              src="/step2-checkparking.svg"
               alt="Step 2"
               className="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
               width={200} // Adjust the width and height as needed
@@ -72,7 +72,7 @@ export default function Home() {
 
           <div className="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto sm:h-[22rem] py-4 px-2">
             <Image
-              src="/checkin-step3.png"
+              src="/step3-checkin.svg"
               alt="Step 3"
               className="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
               width={200} // Adjust the width and height as needed
@@ -88,7 +88,7 @@ export default function Home() {
 
           <div className="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto sm:h-[22rem] py-4 px-2">
             <Image
-              src="/checkout-step4.png"
+              src="/step4-checkout.svg"
               alt="Step 4"
               className="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
               width={200} // Adjust the width and height as needed
@@ -104,7 +104,7 @@ export default function Home() {
 
           <div className="text-center bg-white border-slate-900 border-2 rounded-md w-96 sm:w-60 h-auto sm:h-[22rem] py-4 px-2">
             <Image
-              src="/payment-step5.png"
+              src="/step5-payment.svg"
               alt="Step 5"
               className="mx-auto w-40 sm:w-52 h-40 sm:h-60 mb-4"
               width={200} // Adjust the width and height as needed
