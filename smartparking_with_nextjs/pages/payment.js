@@ -1,7 +1,8 @@
+import Layout from "@/components/layout";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function payment() {
+export default function Payment() {
   return (
       <div>
         <div className="mt-10 sm:mt-16 mx-4 sm:mx-auto sm:max-w-[350px] bg-[#BAD0FD] h-[500px] rounded-md place-items-center shadow-lg">
@@ -53,3 +54,7 @@ export default function payment() {
       </div>
   );
 }
+
+Payment.getLayout = function getLayout(page) {
+  return <Layout>{page}</Layout>;
+};
