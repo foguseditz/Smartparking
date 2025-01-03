@@ -54,7 +54,7 @@ export default function Login() {
             email: user.email,
           })
         );
-        router.replace("/user");
+        router.replace("/parking_space");
       }
     } catch (err) {
       const errorMessages = {
