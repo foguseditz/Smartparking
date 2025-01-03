@@ -1,10 +1,14 @@
 import Layout from "@/components/layout";
+import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function Parking_space() {
   return (
     <>
+      <Head>
+        <title>Parking Space - Smart Parking</title>
+      </Head>
       <div className="text-center mt-10">
         <h1 className="text-3xl max-md:text-2xl font-bold text-[#333333]">
           Parking Space

@@ -1,9 +1,24 @@
+
+import { auth } from "@/pages/firebase/config";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";  
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // สถานะการล็อกอิน
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setIsLoggedIn(true); // ถ้ามีผู้ใช้ล็อกอิน
+      } else {
+        setIsLoggedIn(false); // ถ้าไม่มีผู้ใช้ล็อกอิน
+      }
+    });
+
+    return () => unsubscribe(); // Clean up
+  }, []);
 
   return (
     <nav className="bg-gradient-to-b from-blue-400 to-blue-300 sticky w-full top-0 left-0 z-50 border-b-2 border-blue-900">
@@ -58,38 +73,44 @@ export default function Navbar() {
           id="navbar-default"
         >
           <ul className="flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-transparent">
-            <li>
-              <Link
-                href="/"
-                className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
-              >
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/parking_space"
-                className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
-              >
-                Parking Space
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/status"
-                className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
-              >
-                Status
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/payment"
-                className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
-              >
-                Payment
-              </Link>
-            </li>
+            {isLoggedIn && (
+              <>
+                <li>
+                  <Link
+                    href="/"
+                    className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
+                  >
+                    Home
+                  </Link>
+                </li>
+                
+                <li>
+                  <Link
+                    href="/parking_space"
+                    className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
+                  >
+                    Parking Space
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/status"
+                    className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
+                  >
+                    Status
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/payment"
+                    className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
+                  >
+                    Payment
+                  </Link>
+                </li>
+              </>
+            )}
+            {/* เมนู User */}
             <li className="md:hidden">
               <Link
                 href="/user"

@@ -1,12 +1,17 @@
 import Layout from "@/components/layout";
+import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 
 export default function Payment() {
   return (
+    <>
+      <Head>
+        <title>Payment - Smart Parking</title>
+      </Head>
       <div>
         <div className="mt-10 sm:mt-16 mx-4 sm:mx-auto sm:max-w-[350px] bg-[#BAD0FD] h-[500px] rounded-md place-items-center shadow-lg">
-          <div className="w-[300px] pt-3">
+          <div className="w-[300px] pt-3 m-auto">
             <Image src="/qrpayment.png" alt="" width={300} height={90} />
           </div>
         </div>
@@ -52,6 +57,7 @@ export default function Payment() {
           </Link>
         </div>
       </div>
+    </>
   );
 }
 

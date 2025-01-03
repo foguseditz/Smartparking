@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore"; // นำเข้า Firestore
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,13 +11,11 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// เริ่มต้น Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if it hasn't been initialized
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// เชื่อมต่อกับ Firestore
+// Initialize services
 const db = getFirestore(app);
-
-// เชื่อมต่อกับ Firebase Authentication
 const auth = getAuth(app);
 
-export { db, auth }; // ส่งออกทั้ง db และ auth
+export { db, auth };
