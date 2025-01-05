@@ -4,6 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function Parking_space() {
+
+  // แยก array ตามแถว
+  const topRowOccupied = [ 4]; // รถในแถวบน
+  const bottomRowOccupied = [6]; // รถในแถวล่าง
   return (
     <>
       <Head>
@@ -15,82 +19,53 @@ export default function Parking_space() {
         </h1>
       </div>
 
+      {/* Parking Grid */}
+      {/* First Row */}
       <div className="flex flex-col items-center justify-center mt-8 space-y-0 max-md:5">
         <div className="grid grid-cols-4 gap-0">
-          <div className="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center">
-            <Image
-              src="/free_space.png"
-              alt="Free Space"
-              width={100}
-              height={100}
-              className="w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
-            />
-          </div>
-          <div className="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center">
-            <Image
-              src="/free_space.png"
-              alt="Free Space"
-              width={100}
-              height={100}
-              className="w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
-            />
-          </div>
-          <div className="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center">
-            <Image
-              src="/free_space.png"
-              alt="Free Space"
-              width={100}
-              height={100}
-              className="w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
-            />
-          </div>
-          <div className="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center">
-            <Image
-              src="/Car.png"
-              alt="Car"
-              width={100}
-              height={100}
-              className="w-32 h-36 md:w-36 md:h-40 m-auto"
-            />
-          </div>
+          {[1, 2, 3, 4].map((space) => (
+            <div
+              key={`top-${space}`}
+              className="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+            >
+              <img
+                src={
+                  topRowOccupied.includes(space)
+                    ? "/Car.png"
+                    : "/free_space.png"
+                }
+                alt={topRowOccupied.includes(space) ? "Car" : "Free Space"}
+                className={
+                  topRowOccupied.includes(space)
+                    ? "w-32 h-36 md:w-36 md:h-40 m-auto"
+                    : "w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
+                }
+              />
+            </div>
+          ))}
         </div>
+        {/* Second Row */}
         <div className="grid grid-cols-4 gap-0">
-          <div className="border border-b-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center">
-            <Image
-              src="/free_space.png"
-              alt="Free Space"
-              width={100}
-              height={100}
-              className="w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
-            />
-          </div>
-          <div className="border border-b-0 border-dashed border-gray-500 md:w-40 md:h-40 flex items-center justify-center">
-            <Image
-              src="/Car.png"
-              alt="Car"
-              width={100}
-              height={100}
-              className="w-32 h-36 md:w-36 md:h-40 m-auto"
-            />
-          </div>
-          <div className="border border-b-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center">
-            <Image
-              src="/free_space.png"
-              alt="Free Space"
-              width={100}
-              height={100}
-              className="w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
-            />
-          </div>
-          <div className="border border-b-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center">
-            <Image
-              src="/free_space.png"
-              alt="Free Space"
-              width={100}
-              height={100}
-              className="w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
-            />
-          </div>
+          {[5, 6, 7, 8].map((space) => (
+            <div
+              key={`bottom-${space}`}
+              className="border border-b-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
+            >
+              <img
+                src={
+                  bottomRowOccupied.includes(space)
+                    ? "/Car.png"
+                    : "/free_space.png"
+                }
+                alt={bottomRowOccupied.includes(space) ? "Car" : "Free Space"}
+                className={
+                  bottomRowOccupied.includes(space)
+                    ? "w-32 h-36 md:w-36 md:h-40 m-auto"
+                    : "w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
+                }
+              />
+            </div>
+          ))}
         </div>
       </div>
 

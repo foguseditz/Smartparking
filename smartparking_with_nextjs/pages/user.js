@@ -72,11 +72,11 @@ export default function User() {
       <Head>
         <title>User - Smart Parking</title>
       </Head>
-      <div className="flex flex-col items-center m-auto w-1/2 mt-5 mb-40 relative">
+      <div className="flex flex-col items-center m-auto mt-5 mb-40 relative">
         <div className="bg-[#BAD0FD] rounded-full w-32 max-md:w-28 mt-8 relative z-20">
           <Image src="/account.png" alt="account" width={128} height={60} />
         </div>
-        <div className="bg-[#BAD0FD] w-[25rem] max-md:w-[22rem] max-sm:pt-16 pt-16 p-4 rounded-md shadow-xl absolute top-10 max-md:top-7 z-10 mt-[4rem]">
+        <div className="bg-[#BAD0FD] w-[27rem] max-md:w-[24rem] max-sm:pt-16 pt-16 p-4 rounded-md shadow-xl absolute top-10 max-md:top-7 z-10 mt-[4rem]">
           <div className="flex items-center">
             <p className="font-semibold text-lg max-md:text-sm">
               Username &nbsp; &nbsp; :
