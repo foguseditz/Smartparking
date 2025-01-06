@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/pages/firebase/config";
 import GradientLayout from "@/components/GradientLayout";
 import Image from "next/image";
 import Link from "next/link";
 import Head from "next/head";
+import { auth } from "../firebase/config";
 
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -156,7 +156,6 @@ export default function Login() {
     </>
   );
 }
-// ที่ด้านล่างของไฟล์ Login.js
 
 Login.getLayout = function getLayout(page) {
   return <GradientLayout>{page}</GradientLayout>;

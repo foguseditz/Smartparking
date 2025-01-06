@@ -8,7 +8,7 @@ export default function Footer() {
           alt="Footer Background"
           width={100}
           height={100}
-          class="h-full w-full"
+          className="h-full w-full"
         />
       </footer>
     );
