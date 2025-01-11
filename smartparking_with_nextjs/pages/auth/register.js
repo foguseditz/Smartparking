@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/pages/firebase/config";
 import GradientLayout from "@/components/GradientLayout";
 import Image from "next/image";
@@ -23,9 +23,18 @@ export default function Register() {
 
   // ตรวจสอบสถานะการล็อกอินเมื่อโหลดหน้า
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && localStorage.getItem("user")) {
-        router.push("/user");
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          localStorage.setItem("user", JSON.stringify(userData));
+          if (userData.role === "admin") {
+            router.push("/admin");
+          } else {
+            router.push("/user");
+          }
+        }
       }
     });
 
@@ -51,6 +60,11 @@ export default function Register() {
       return;
     }
 
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
     setSuccess("");
@@ -62,11 +76,12 @@ export default function Register() {
         formData.password
       );
 
-      if (userCredential && userCredential.user && userCredential.user.uid) {
-        // บันทึกข้อมูลใน Firestore
+      if (userCredential?.user?.uid) {
+        // บันทึกข้อมูลใน Firestore พร้อม role
         await setDoc(doc(db, "users", userCredential.user.uid), {
           username: formData.username,
           email: formData.email,
+          role: "user", // ค่าเริ่มต้นคือ user
           createdAt: new Date().toISOString(),
         });
 
@@ -83,6 +98,8 @@ export default function Register() {
         setError(
           "This email is already in use. Please use a different email or log in."
         );
+      } else if (err.code === "auth/weak-password") {
+        setError("Password is too weak. Please use a stronger password.");
       } else {
         setError(err.message || "An error occurred. Please try again.");
       }
