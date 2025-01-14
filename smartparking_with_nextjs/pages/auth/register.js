@@ -20,22 +20,27 @@ export default function Register() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // ตรวจสอบสถานะการล็อกอินเมื่อโหลดหน้า
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // ถ้ามีผู้ใช้ล็อกอินอยู่แล้ว ตรวจสอบ role และ redirect
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           localStorage.setItem("user", JSON.stringify(userData));
           if (userData.role === "admin") {
-            router.push("/admin");
+            router.replace("/admin");
           } else {
-            router.push("/user");
+            router.replace("/parking_space");
           }
+        } else {
+          router.replace("/parking_space");
         }
       }
+      setAuthChecked(true);
     });
 
     return () => unsubscribe();
@@ -82,14 +87,17 @@ export default function Register() {
           username: formData.username,
           email: formData.email,
           role: "user", // ค่าเริ่มต้นคือ user
-          createdAt: new Date().toISOString(),
         });
 
         // ล็อกเอาท์ทันที
         await auth.signOut();
 
-        // ไปหน้า login ทันที
-        router.push("/auth/login");
+        setSuccess("Registration successful! Redirecting to login...");
+
+        // หน่วงเวลาสักครู่เพื่อให้ผู้ใช้เห็นข้อความสำเร็จ
+        setTimeout(() => {
+          router.push("/auth/login");
+        }, 1500);
       } else {
         setError("Failed to create user. Please try again.");
       }
@@ -107,6 +115,11 @@ export default function Register() {
       setIsLoading(false);
     }
   };
+
+  // ไม่แสดงอะไรระหว่างตรวจสอบสถานะการล็อกอิน
+  if (!authChecked) {
+    return null;
+  }
 
   return (
     <>
@@ -131,7 +144,7 @@ export default function Register() {
             </h1>
 
             <div className="mb-6 text-center text-slate-700 sm:text-lg">
-              Already have an account?
+              Already have an account?{" "}
               <Link
                 href="/auth/login"
                 className="text-blue-900 underline transition-all hover:text-blue-950 hover:font-semibold"
@@ -164,7 +177,8 @@ export default function Register() {
                   placeholder="Username"
                   value={formData.username}
                   onChange={handleInputChange}
-                  className="block w-full bg-transparent border-b-2 border-white py-3 text-white placeholder:text-white/80 focus:border-blue-300 focus:ring-0 text-base sm:text-lg md:text-xl transition-all"
+                  disabled={isLoading}
+                  className="block w-full bg-transparent border-b-2 border-white py-3 text-white placeholder:text-white/80 focus:border-blue-300 focus:ring-0 text-base sm:text-lg md:text-xl transition-all disabled:opacity-70"
                 />
               </div>
 
@@ -176,7 +190,8 @@ export default function Register() {
                   placeholder="Email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="block w-full bg-transparent border-b-2 border-white py-3 text-white placeholder:text-white/80 focus:border-blue-300 focus:ring-0 text-base sm:text-lg md:text-xl transition-all"
+                  disabled={isLoading}
+                  className="block w-full bg-transparent border-b-2 border-white py-3 text-white placeholder:text-white/80 focus:border-blue-300 focus:ring-0 text-base sm:text-lg md:text-xl transition-all disabled:opacity-70"
                 />
               </div>
 
@@ -188,7 +203,8 @@ export default function Register() {
                   placeholder="Password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="block w-full bg-transparent border-b-2 border-white py-3 text-white placeholder:text-white/80 focus:border-blue-300 focus:ring-0 text-base sm:text-lg md:text-xl transition-all"
+                  disabled={isLoading}
+                  className="block w-full bg-transparent border-b-2 border-white py-3 text-white placeholder:text-white/80 focus:border-blue-300 focus:ring-0 text-base sm:text-lg md:text-xl transition-all disabled:opacity-70"
                 />
               </div>
 
@@ -200,7 +216,8 @@ export default function Register() {
                   placeholder="Confirm Password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  className="block w-full bg-transparent border-b-2 border-white py-3 text-white placeholder:text-white/80 focus:border-blue-300 focus:ring-0 text-base sm:text-lg md:text-xl transition-all"
+                  disabled={isLoading}
+                  className="block w-full bg-transparent border-b-2 border-white py-3 text-white placeholder:text-white/80 focus:border-blue-300 focus:ring-0 text-base sm:text-lg md:text-xl transition-all disabled:opacity-70"
                 />
               </div>
 

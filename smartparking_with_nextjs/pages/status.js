@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Layout from "@/components/layout";
 import Head from "next/head";
 import Link from "next/link";
+import { QRCodeCanvas } from "qrcode.react";
 
 export default function Status() {
   const [showAlert, setShowAlert] = useState(false);
@@ -53,12 +54,12 @@ export default function Status() {
                     />
                   </svg>
                 </div>
-                
+
                 {/* Alert Title - Responsive text */}
                 <h3 className="text-base sm:text-lg md:text-xl font-medium text-gray-900 mb-3 sm:mb-4">
                   Please pay for the service
                 </h3>
-                
+
                 {/* Buttons Container - Responsive spacing and layout */}
                 <div className="mt-4 flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
                   <Link

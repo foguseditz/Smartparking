@@ -121,11 +121,11 @@ export default function Parking_space() {
 
       {/* Parking Grid */}
       <div className="flex flex-col items-center justify-center mt-8 space-y-4">
-        <div className={`grid grid-cols-4 gap-4`}>
+        <div className={`grid grid-cols-4 gap-0`}>
           {[...Array(totalSpaces)].map((_, index) => (
             <div
               key={index}
-              className="border-dashed border-x-2 border-grey-800 w-36 h-36 flex items-center justify-center"
+              className="border-dashed border-gray-300 border-x-2 border-grey-800 w-36 h-36 flex items-center justify-center"
             >
               <Image
                 src={index < carCount ? "/Car.png" : "/free_space.png"}
@@ -138,7 +138,6 @@ export default function Parking_space() {
                     : "w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto object-contain"
                 }
               />
-
             </div>
           ))}
         </div>

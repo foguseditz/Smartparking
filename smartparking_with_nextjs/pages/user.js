@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/pages/firebase/config";
 import { onAuthStateChanged } from "firebase/auth";
 import Head from "next/head";
+import { QRCodeCanvas } from "qrcode.react";
 
 export default function User() {
   const [userData, setUserData] = useState({ username: "", email: "" });
@@ -94,11 +95,16 @@ export default function User() {
             </p>
           </div>
           <div className="my-9 justify-items-center">
-            <img
-              src="/qr-code.png"
-              alt="QR Code"
-              className="w-36 rounded-md shadow-xl m-auto"
-            />
+            {userData.email ? (
+              <QRCodeCanvas
+                value={userData.email} // ใช้ email หรือข้อมูลที่ต้องการให้แสดงใน QR Code
+                size={156} // ขนาดของ QR Code
+                level={"H"} // ระดับการแก้ไขข้อผิดพลาด
+                className="rounded-md shadow-xl m-auto"
+              />
+            ) : (
+              <p>Loading QR Code...</p>
+            )}
           </div>
         </div>
         <div className="flex justify-center items-center p-3 mt-80">

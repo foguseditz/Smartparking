@@ -11,15 +11,19 @@ export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        // User is signed in, redirect to parking space
         router.replace("/parking_space");
       }
+      setAuthChecked(true);
     });
 
+    // Cleanup subscription
     return () => unsubscribe();
   }, [router]);
 
@@ -71,6 +75,11 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  // Show nothing while checking authentication status
+  if (!authChecked) {
+    return null;
+  }
 
   return (
     <>
