@@ -1,7 +1,5 @@
 import Layout from "@/components/layout";
 import Head from "next/head";
-import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 
 export default function EditParking() {
@@ -30,7 +28,7 @@ export default function EditParking() {
       <Head>
         <title>Edit Parking - Smart Parking</title>
       </Head>
-      
+
       <div className="container mx-auto px-4">
         <div className="text-center my-10">
           <h1 className="text-3xl max-md:text-2xl font-bold text-[#333333]">
