@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import {
   collection,
   doc,
   getDocs,
   deleteDoc,
-  getDoc,
+  getDoc
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../firebase/config";
 import Layout from "@/components/layout";
 import Head from "next/head";
 import Image from "next/image";
+import { getApp } from "firebase/app";
+
+const app = getApp();  // Use the default Firebase app
+const functions = getFunctions(app);  // Initialize the functions instance
 
 export default function EditMember() {
   const [members, setMembers] = useState([]);
@@ -67,62 +72,41 @@ export default function EditMember() {
   const handleEdit = (id) => {
     router.push(`/admin/edit_member/${id}`);
   };
-
+  
   const handleDelete = async (id) => {
-    // Validation
     if (!id || typeof id !== "string") {
       console.error("Invalid document ID:", id);
       return;
     }
-
-    // Confirmation
+  
     if (!confirm("Are you sure you want to delete this member?")) {
       return;
     }
-
+  
     try {
-      const db = getFirestore();
-
-      // 1. Get user document first to retrieve email
       const userDoc = await getDoc(doc(db, "users", id));
       if (!userDoc.exists()) {
         throw new Error("User document not found");
       }
-
+  
       const userData = userDoc.data();
       const userEmail = userData.email;
-
-      // 2. Delete from Firestore first
+  
+      // Delete the user from Firestore
       await deleteDoc(doc(db, "users", id));
       console.log("Member deleted from Firestore:", id);
-
-      // 3. Delete related data (e.g., reservations)
-      const reservationsSnapshot = await getDocs(
-        query(collection(db, "reservation"), where("userId", "==", id))
-      );
-
-      const deletePromises = reservationsSnapshot.docs.map((doc) =>
-        deleteDoc(doc.ref)
-      );
-      await Promise.all(deletePromises);
-      console.log("Related reservations deleted");
-
-      // 4. Delete from Authentication using Cloud Function
-      // Create a Cloud Function to handle Auth deletion
+  
+      // Call the Firebase function to delete the user from Authentication
       const deleteAuthUser = httpsCallable(functions, "deleteAuthUser");
-      await deleteAuthUser({ email: userEmail });
-      console.log("User deleted from Auth");
-
-      // 5. Show success message
+      const result = await deleteAuthUser({ email: userEmail });
+      console.log("User deleted from Auth:", result.data.message);  // Log result from function
+  
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 3000);
-
-      // 6. Refresh member list
+  
       await fetchMembers();
     } catch (error) {
       console.error("Error during deletion:", error);
-      // Show error message to user
-      alert(`Failed to delete member: ${error.message}`);
     }
   };
 
@@ -149,14 +133,14 @@ export default function EditMember() {
       <Head>
         <title>Members Management - Smart Parking</title>
       </Head>
-      <div class="relative flex flex-col w-full h-full text-gray-700 bg-white shadow-md rounded-xl bg-clip-border mb-32">
-        <div class="relative mx-4 mt-4 overflow-hidden text-gray-700 bg-white rounded-none bg-clip-border">
-          <div class="flex items-center justify-between gap-8 mb-8">
+      <div className="relative flex flex-col w-full h-full text-gray-700 bg-white shadow-md rounded-xl bg-clip-border mb-32">
+        <div className="relative mx-4 mt-4 overflow-hidden text-gray-700 bg-white rounded-none bg-clip-border">
+          <div className="flex items-center justify-between gap-8 mb-8">
             <div>
-              <h5 class="block font-sans text-xl antialiased font-semibold leading-snug tracking-normal text-blue-gray-900">
+              <h5 className="block font-sans text-xl antialiased font-semibold leading-snug tracking-normal text-blue-gray-900">
                 Members list
               </h5>
-              <p class="block mt-1 font-sans text-base antialiased font-normal leading-relaxed text-gray-700">
+              <p className="block mt-1 font-sans text-base antialiased font-normal leading-relaxed text-gray-700">
                 See information about all members
               </p>
             </div>
@@ -241,7 +225,7 @@ export default function EditMember() {
                       <button
                         className="relative h-10 max-h-[40px] w-10 max-w-[40px] select-none rounded-lg text-center align-middle font-sans text-xs font-medium uppercase text-gray-900 transition-all hover:bg-gray-900/10 active:bg-gray-900/20 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
                         type="button"
-                        onClick={handleEdit}
+                        onClick={() => handleEdit(member.id)}
                       >
                         <span className="absolute transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
                           <Image

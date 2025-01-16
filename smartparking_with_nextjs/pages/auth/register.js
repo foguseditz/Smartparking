@@ -59,42 +59,44 @@ export default function Register() {
       setError("All fields are required.");
       return;
     }
-
+  
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-
+  
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long.");
       return;
     }
-
+  
     setIsLoading(true);
     setError("");
     setSuccess("");
-
+  
     try {
+      // Creating user
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
-
+  
       if (userCredential?.user?.uid) {
-        // บันทึกข้อมูลใน Firestore พร้อม role
-        await setDoc(doc(db, "users", userCredential.user.uid), {
+        // Save user data in Firestore
+        const userDocRef = doc(db, "users", userCredential.user.uid);
+        await setDoc(userDocRef, {
           username: formData.username,
           email: formData.email,
-          role: "user", // ค่าเริ่มต้นคือ user
+          role: "user", // Default role
         });
-
-        // ล็อกเอาท์ทันที
+  
+        // Logout the user right after registration
         await auth.signOut();
-
+  
         setSuccess("Registration successful! Redirecting to login...");
-
-        // หน่วงเวลาสักครู่เพื่อให้ผู้ใช้เห็นข้อความสำเร็จ
+  
+        // Wait a moment to show the success message
         setTimeout(() => {
           router.push("/auth/login");
         }, 1500);
@@ -102,10 +104,9 @@ export default function Register() {
         setError("Failed to create user. Please try again.");
       }
     } catch (err) {
+      console.error("Error during signup: ", err);
       if (err.code === "auth/email-already-in-use") {
-        setError(
-          "This email is already in use. Please use a different email or log in."
-        );
+        setError("This email is already in use. Please use a different email or log in.");
       } else if (err.code === "auth/weak-password") {
         setError("Password is too weak. Please use a stronger password.");
       } else {
@@ -115,7 +116,6 @@ export default function Register() {
       setIsLoading(false);
     }
   };
-
   // ไม่แสดงอะไรระหว่างตรวจสอบสถานะการล็อกอิน
   if (!authChecked) {
     return null;
