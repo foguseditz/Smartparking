@@ -125,14 +125,15 @@ export default function EditMember() {
     }
   };
 
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-  };
+const handleTabChange = (event) => {
+  const selectedTab = event.target.value;
+  setActiveTab(selectedTab);
+};
 
-  const filteredMembers = members.filter((member) => {
-    if (activeTab === "all") return true;
-    return member.role?.toLowerCase() === activeTab.toLowerCase();
-  });
+const filteredMembers = members.filter((member) => {
+  if (activeTab === "all") return true;
+  return member.role?.toLowerCase() === activeTab.toLowerCase();
+});
 
   if (loading) {
     return (
@@ -160,36 +161,24 @@ export default function EditMember() {
             </div>
           </div>
 
-          <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
-            <div className="block w-full overflow-hidden md:w-max">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <div className="block w-full overflow-hidden md:w-1/4 lg:w-1/5">
               <nav>
-                <ul
-                  role="tablist"
-                  className="relative flex flex-row p-1 rounded-lg bg-blue-gray-50 bg-opacity-60"
+                <select
+                  value={activeTab}
+                  onChange={handleTabChange}
+                  className="w-full px-4 py-2 text-base font-medium text-gray-700 border border-gray-300 rounded-md shadow-sm transition duration-300 ease-in-out"
                 >
                   {["all", "user", "admin"].map((tab) => (
-                    <li
-                      key={tab}
-                      role="tab"
-                      onClick={() => handleTabChange(tab)}
-                      className={`relative flex items-center justify-center w-full h-full px-2 py-1 font-sans text-base antialiased font-normal leading-relaxed text-center cursor-pointer select-none transition-all duration-300 ease-in-out hover:text-blue-600 text-blue-gray-900`}
-                    >
-                      <div className="z-20 text-inherit">
-                        &nbsp;&nbsp;{tab.charAt(0).toUpperCase() + tab.slice(1)}
-                        &nbsp;&nbsp;
-                      </div>
-                      {activeTab === tab && (
-                        <div className="absolute inset-0 z-10 h-full bg-white rounded-md shadow transition-all duration-300 ease-in-out"></div>
-                      )}
-                      {activeTab !== tab && (
-                        <div className="absolute inset-0 z-10 h-full bg-white rounded-md shadow opacity-0 hover:opacity-25 transition-all duration-300 ease-in-out"></div>
-                      )}
-                    </li>
+                    <option key={tab} value={tab} className="text-gray-700">
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </option>
                   ))}
-                </ul>
+                </select>
               </nav>
             </div>
           </div>
+          
         </div>
         <div className="p-6 px-0 overflow-scroll">
           {loading ? (
