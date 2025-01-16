@@ -126,15 +126,15 @@ export default function EditMember() {
     }
   };
 
-const handleTabChange = (event) => {
-  const selectedTab = event.target.value;
-  setActiveTab(selectedTab);
-};
+  const handleTabChange = (event) => {
+    const selectedTab = event.target.value;
+    setActiveTab(selectedTab);
+  };
 
-const filteredMembers = members.filter((member) => {
-  if (activeTab === "all") return true;
-  return member.role?.toLowerCase() === activeTab.toLowerCase();
-});
+  const filteredMembers = members.filter((member) => {
+    if (activeTab === "all") return true;
+    return member.role?.toLowerCase() === activeTab.toLowerCase();
+  });
 
   if (loading) {
     return (
@@ -164,6 +164,7 @@ const filteredMembers = members.filter((member) => {
 
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div className="block w-full overflow-hidden md:w-1/4 lg:w-1/5">
+              <div className="mb-1">Filtered Members :</div>
               <nav>
                 <select
                   value={activeTab}
@@ -179,7 +180,6 @@ const filteredMembers = members.filter((member) => {
               </nav>
             </div>
           </div>
-          
         </div>
         <div className="p-6 px-0 overflow-scroll">
           {loading ? (
