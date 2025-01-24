@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/pages/firebase/config";
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/pages/firebase/config";
 import GradientLayout from "@/components/GradientLayout";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { onAuthStateChanged } from "firebase/auth";
 import Head from "next/head";
+import bcrypt from "bcryptjs"; // นำเข้า bcryptjs
 
 export default function Register() {
   const router = useRouter();
@@ -22,28 +21,17 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // ตรวจสอบสถานะการล็อกอินเมื่อโหลดหน้า
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // ถ้ามีผู้ใช้ล็อกอินอยู่แล้ว ตรวจสอบ role และ redirect
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          localStorage.setItem("user", JSON.stringify(userData));
-          if (userData.role === "admin") {
-            router.replace("/admin");
-          } else {
-            router.replace("/parking_space");
-          }
-        } else {
-          router.replace("/parking_space");
-        }
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+      if (user.role === "admin") {
+        router.replace("/admin");
+      } else {
+        router.replace("/parking_space");
       }
+    } else {
       setAuthChecked(true);
-    });
-
-    return () => unsubscribe();
+    }
   }, [router]);
 
   const handleInputChange = (e) => {
@@ -59,64 +47,54 @@ export default function Register() {
       setError("All fields are required.");
       return;
     }
-  
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-  
+
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long.");
       return;
     }
-  
+
     setIsLoading(true);
     setError("");
     setSuccess("");
-  
+
     try {
-      // Creating user
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-  
-      if (userCredential?.user?.uid) {
-        // Save user data in Firestore
-        const userDocRef = doc(db, "users", userCredential.user.uid);
-        await setDoc(userDocRef, {
-          username: formData.username,
-          email: formData.email,
-          role: "user", // Default role
-        });
-  
-        // Logout the user right after registration
-        await auth.signOut();
-  
-        setSuccess("Registration successful! Redirecting to login...");
-  
-        // Wait a moment to show the success message
-        setTimeout(() => {
-          router.push("/auth/login");
-        }, 1500);
-      } else {
-        setError("Failed to create user. Please try again.");
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", formData.email));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        setError("This email is already in use.");
+        return;
       }
+
+      // เข้ารหัสรหัสผ่านก่อนบันทึกลง Firestore
+      const salt = await bcrypt.genSalt(10); // สร้าง salt
+      const hashedPassword = await bcrypt.hash(formData.password, salt); // เข้ารหัสรหัสผ่าน
+
+      await addDoc(usersRef, {
+        username: formData.username,
+        email: formData.email,
+        password: hashedPassword, // ใช้รหัสผ่านที่เข้ารหัสแล้ว
+        role: "user",
+      });
+
+      setSuccess("Registration successful! Redirecting to login...");
+
+      setTimeout(() => {
+        router.push("/auth/login");
+      }, 1500);
     } catch (err) {
-      console.error("Error during signup: ", err);
-      if (err.code === "auth/email-already-in-use") {
-        setError("This email is already in use. Please use a different email or log in.");
-      } else if (err.code === "auth/weak-password") {
-        setError("Password is too weak. Please use a stronger password.");
-      } else {
-        setError(err.message || "An error occurred. Please try again.");
-      }
+      setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-  // ไม่แสดงอะไรระหว่างตรวจสอบสถานะการล็อกอิน
+
   if (!authChecked) {
     return null;
   }

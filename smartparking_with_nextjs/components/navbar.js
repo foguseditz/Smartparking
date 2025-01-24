@@ -1,9 +1,6 @@
-import { auth } from "@/pages/firebase/config";
-import { db } from "@/pages/firebase/config"; // อย่าลืม import db จาก config
-import { doc, getDoc } from "firebase/firestore";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,26 +8,14 @@ export default function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        setIsLoggedIn(true);
-        // ตรวจสอบ role จาก Firestore
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            setIsAdmin(userDoc.data().role === "admin");
-          }
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-          setIsAdmin(false);
-        }
-      } else {
-        setIsLoggedIn(false);
-        setIsAdmin(false);
-      }
-    });
-
-    return () => unsubscribe();
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+      setIsLoggedIn(true);
+      setIsAdmin(user.role === "admin"); // ตรวจสอบ role จาก Local Storage
+    } else {
+      setIsLoggedIn(false);
+      setIsAdmin(false);
+    }
   }, []);
 
   const UserMenu = () => (
@@ -74,7 +59,7 @@ export default function Navbar() {
     <>
       <li>
         <Link
-          href="/parking_space"
+          href="/admin/edit_parking"
           className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
         >
           Parking Management
@@ -93,7 +78,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-gradient-to-b from-blue-400 to-blue-300 sticky w-full top-0 left-0 z-50 border-b-2 border-blue-900">
-      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto px-4 py-2">
         {/* Logo Section */}
         <Link href="/" aria-label="Smart Parking Home">
           <div className="flex items-center space-x-3">
@@ -143,32 +128,31 @@ export default function Navbar() {
           } w-full md:block md:w-auto`}
           id="navbar-default"
         >
-          <ul className="flex flex-col p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-transparent">
+          <ul className="flex flex-col p-2 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:flex-row md:space-x-8 md:mt-0 md:border-0 md:bg-transparent">
             {isLoggedIn && (isAdmin ? <AdminMenu /> : <UserMenu />)}
 
             {/* Profile Icon/Link */}
             <li className="md:hidden">
               <Link
-                href={isAdmin ? "/admin/profile" : "/user"}
+                href={isAdmin ? "/admin" : "/user"}
                 className="block py-2 px-3 text-gray-900 rounded hover:bg-blue-200 md:hover:bg-transparent md:border-0 md:hover:text-blue-950 md:hover:underline hover:font-semibold"
               >
                 {isAdmin ? "Admin Profile" : "User Profile"}
               </Link>
             </li>
             <li className="hidden md:block">
-              <Link
-                href={isAdmin ? "/admin" : "/user"}
-                aria-label="Profile"
-              >
+              <Link href={isAdmin ? "/admin" : "/user"} aria-label="Profile">
                 <Image
-                  src={isAdmin ? "/account.png" : "/account.png"}
+                  src="/account.png"
                   alt="Profile"
                   width={40}
                   height={40}
-                  className="w-8 h-8 md:w-10 md:h-10 rounded-full"
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-full cursor-pointer"
                 />
               </Link>
             </li>
+
+          
           </ul>
         </div>
       </div>

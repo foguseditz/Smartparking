@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/pages/firebase/config";
 import GradientLayout from "@/components/GradientLayout";
 import Image from "next/image";
 import Link from "next/link";
 import Head from "next/head";
-import { auth } from "../firebase/config";
+import bcrypt from "bcryptjs"; // นำเข้า bcryptjs
 
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -15,16 +16,16 @@ export default function Login() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, redirect to parking space
-        router.replace("/parking_space");
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+      if (user.role === "admin") {
+        router.replace("/admin"); // Redirect ไปหน้า Admin
+      } else {
+        router.replace("/parking_space"); // Redirect ไปหน้า User
       }
+    } else {
       setAuthChecked(true);
-    });
-
-    // Cleanup subscription
-    return () => unsubscribe();
+    }
   }, [router]);
 
   const handleChange = (e) => {
@@ -43,40 +44,44 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        formData.email.trim(),
-        formData.password
-      );
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", formData.email));
+      const querySnapshot = await getDocs(q);
 
-      const user = userCredential.user;
-      if (user) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            username: user.displayName || "Anonymous",
-            email: user.email,
-          })
-        );
-        router.replace("/parking_space");
+      if (querySnapshot.empty) {
+        setError("User not found.");
+        return;
+      }
+
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data();
+
+      // ตรวจสอบรหัสผ่านที่ถูกเข้ารหัส
+      const isPasswordValid = await bcrypt.compare(
+        formData.password,
+        userData.password
+      );
+      if (!isPasswordValid) {
+        setError("Incorrect password.");
+        return;
+      }
+
+      // บันทึกข้อมูลผู้ใช้ใน Local Storage
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Redirect ตาม role
+      if (userData.role === "admin") {
+        router.replace("/admin"); // Redirect ไปหน้า Admin
+      } else {
+        router.replace("/parking_space"); // Redirect ไปหน้า User
       }
     } catch (err) {
-      const errorMessages = {
-        "auth/invalid-credential": "Invalid email or password.",
-        "auth/wrong-password": "Incorrect password.",
-        "auth/invalid-email": "Invalid email format.",
-        "auth/user-disabled": "Account disabled. Contact support.",
-        "auth/too-many-requests": "Too many attempts. Try later.",
-        "auth/network-request-failed": "Network error. Check connection.",
-        "auth/internal-error": "Internal error. Try again.",
-      };
-      setError(errorMessages[err.code] || "Login failed. Please try again.");
+      setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Show nothing while checking authentication status
   if (!authChecked) {
     return null;
   }

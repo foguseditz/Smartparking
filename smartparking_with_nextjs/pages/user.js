@@ -2,9 +2,8 @@ import Layout from "@/components/layout";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/pages/firebase/config";
-import { onAuthStateChanged } from "firebase/auth";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/pages/firebase/config";
 import Head from "next/head";
 import { QRCodeCanvas } from "qrcode.react";
 
@@ -14,31 +13,38 @@ export default function User() {
   const [showAlert, setShowAlert] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.push("/auth/login");
-        return;
+useEffect(() => {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user || !user.email) {
+    // ใช้ email แทน uid
+    router.push("/auth/login");
+    return;
+  }
+
+  const fetchUserData = async () => {
+    try {
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("email", "==", user.email)); // ใช้ email เพื่อค้นหา
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        setUserData(userDoc.data());
+      } else {
+        console.error("No such document!");
       }
-      try {
-        const userDoc = doc(db, "users", user.uid);
-        const docSnap = await getDoc(userDoc);
-        if (docSnap.exists()) {
-          setUserData(docSnap.data());
-        } else {
-          console.error("No such document!");
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      } finally {
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUserData();
+}, [router]);
 
   const handleSignOutConfirm = () => {
-    auth.signOut();
+    localStorage.removeItem("user");
     router.push("/auth/login");
   };
 
@@ -96,9 +102,9 @@ export default function User() {
           <div className="my-9 justify-items-center">
             {userData.email ? (
               <QRCodeCanvas
-                value={userData.email} // ใช้ email หรือข้อมูลที่ต้องการให้แสดงใน QR Code
-                size={156} // ขนาดของ QR Code
-                level={"H"} // ระดับการแก้ไขข้อผิดพลาด
+                value={userData.email}
+                size={156}
+                level={"H"}
                 className="rounded-md shadow-xl m-auto"
               />
             ) : (

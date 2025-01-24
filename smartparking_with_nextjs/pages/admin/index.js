@@ -2,59 +2,68 @@ import Layout from "@/components/layout";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/pages/firebase/config";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/pages/firebase/config";
 import Head from "next/head";
 
 export default function Admin() {
   const [userData, setUserData] = useState({ username: "", email: "" });
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
   const [showAlert, setShowAlert] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          // ดึงข้อมูลจาก Firestore
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-
-            // ตรวจสอบว่าเป็น admin หรือไม่
-            if (userData.role !== "admin") {
-              router.push("/"); // ถ้าไม่ใช่ admin ให้ redirect ไปหน้าแรก
-              return;
-            }
-
-            setUserData({
-              username: userData.username || "",
-              email: userData.email || "",
-            });
-          } else {
-            console.error("User document not found");
-            router.push("/");
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          router.push("/");
-        } finally {
-          setLoading(false);
+    const verifyUser = async () => {
+      try {
+        const userStr = window?.localStorage?.getItem("user");
+        if (!userStr) {
+          await router.replace("/auth/login");
+          return;
         }
-      } else {
-        // ถ้าไม่ได้ login ให้ redirect ไปหน้า login
-        router.push("/auth/login");
-      }
-    });
 
-    return () => unsubscribe();
+        const user = JSON.parse(userStr);
+        if (!user?.email) {
+          await router.replace("/auth/login");
+          return;
+        }
+
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          const userData = userDoc.data();
+
+          // ถ้าไม่ใช่ admin ให้ redirect ไปหน้า user
+          if (userData.role !== "admin") {
+            await router.replace("/");
+            return;
+          }
+
+          setUserData(userData);
+        } else {
+          console.error("No such document!");
+          await router.replace("/auth/login");
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        await router.replace("/auth/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    verifyUser();
   }, [router]);
 
-  const handleSignOutConfirm = () => {
-    auth.signOut();
-    router.push("/auth/login");
+  const handleSignOut = async () => {
+    try {
+      window.localStorage.removeItem("user");
+      await router.replace("/auth/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   const AlertDialog = () => (
@@ -66,7 +75,7 @@ export default function Admin() {
         <p className="text-gray-500 mb-6">Are you sure you want to sign out?</p>
         <div className="flex justify-end space-x-4">
           <button
-            onClick={handleSignOutConfirm}
+            onClick={handleSignOut} // แก้จาก handleSignOutConfirm เป็น handleSignOut
             className="px-4 py-2 bg-red-500 text-white font-medium rounded-md hover:bg-red-600 transition-colors"
           >
             Sign Out
@@ -82,11 +91,10 @@ export default function Admin() {
     </div>
   );
 
-  // แสดง loading ขณะกำลังตรวจสอบข้อมูล
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+      <div className="text-center mt-10">
+        <h1 className="text-3xl font-bold">Loading...</h1>
       </div>
     );
   }
@@ -96,23 +104,17 @@ export default function Admin() {
       <Head>
         <title>Admin - Smart Parking</title>
       </Head>
-      <div className="flex flex-col items-center m-auto w-1/2 mt-5 mb-40 relative">
+      <div className="flex flex-col items-center m-auto mt-5 mb-40 relative">
         <div className="bg-[#BAD0FD] rounded-full w-32 max-md:w-28 mt-8 relative z-20">
-          <Image
-            src="/account.png"
-            alt="account"
-            width={128}
-            height={128}
-            className="rounded-full"
-          />
+          <Image src="/account.png" alt="account" width={128} height={60} />
         </div>
-        <div className="bg-[#BAD0FD] w-[25rem] max-md:w-[22rem] max-sm:pt-16 pt-16 p-4 rounded-md shadow-xl absolute top-10 max-md:top-7 z-10 mt-[4rem]">
+        <div className="bg-[#BAD0FD] w-[27rem] max-md:w-[24rem] max-sm:pt-16 pt-16 p-4 rounded-md shadow-xl absolute top-10 max-md:top-7 z-10 mt-[4rem]">
           <div className="flex items-center">
             <p className="font-semibold text-lg max-md:text-sm">
               Username &nbsp; &nbsp; :
             </p>
             <p className="text-gray-700 ms-14 max-md:text-sm">
-              {userData.username}
+              {userData.username || "Loading..."}
             </p>
           </div>
           <div className="flex items-center mt-4">
@@ -120,11 +122,11 @@ export default function Admin() {
               Email &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; :
             </p>
             <p className="text-gray-700 ms-14 max-md:text-sm">
-              {userData.email}
+              {userData.email || "Loading..."}
             </p>
           </div>
         </div>
-        <div className="flex justify-center items-center p-3 mt-[9rem]">
+        <div className="flex justify-center items-center p-3 mt-[8rem]">
           <button
             onClick={() => setShowAlert(true)}
             className="bg-white border-red-500 border-2 w-[25rem] max-md:w-[22rem] text-red-500 font-semibold py-2 px-4 rounded-md hover:bg-red-500 hover:text-white shadow-xl transition text-center"

@@ -1,113 +1,71 @@
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import Layout from "@/components/layout";
+import { useState, useEffect } from "react";
 import {
   collection,
-  doc,
   getDocs,
+  doc,
   deleteDoc,
-  getDoc
 } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../firebase/config";
-import Layout from "@/components/layout";
+import { db } from "@/pages/firebase/config";
 import Head from "next/head";
+import { useRouter } from "next/router";
 import Image from "next/image";
-import { getApp } from "firebase/app";
+import AddMemberPopup from "@/components/AddMemberPopup"; // นำเข้า AddMemberPopup
 
-const app = getApp();  // Use the default Firebase app
-const functions = getFunctions(app);  // Initialize the functions instance
-
-export default function EditMember() {
-  const [members, setMembers] = useState([]);
+export default function Edit_Member() {
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showDeleteResultAlert, setShowDeleteResultAlert] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState(null);
+  const [memberToDelete, setMemberToDelete] = useState(null);
+  const [showAddMemberPopup, setShowAddMemberPopup] = useState(false); // State สำหรับควบคุมการแสดงป้อปอัพเพิ่มสมาชิก
   const router = useRouter();
-  const [showAlert, setShowAlert] = useState(false);
 
   useEffect(() => {
-    const checkAdminAndFetchData = async (user) => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || user.role !== "admin") {
+      router.push("/auth/login");
+      return;
+    }
+
+    const fetchUsers = async () => {
       try {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists() || userDoc.data().role !== "admin") {
-          router.push("/");
-          return;
-        }
-
-        fetchMembers();
+        const usersRef = collection(db, "users");
+        const querySnapshot = await getDocs(usersRef);
+        const usersList = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setUsers(usersList);
       } catch (error) {
-        console.error("Error checking admin status:", error);
-        router.push("/");
+        console.error("Error fetching users:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        checkAdminAndFetchData(user);
-      } else {
-        router.push("/login");
-      }
-    });
-
-    return () => unsubscribe();
+    fetchUsers();
   }, [router]);
 
-  const fetchMembers = async () => {
+  const handleDeleteUser = async (userId) => {
     try {
-      const querySnapshot = await getDocs(collection(db, "users"));
-      const memberData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setMembers(memberData);
+      const userDocRef = doc(db, "users", userId);
+      await deleteDoc(userDocRef);
+      setDeleteStatus("success");
+      setShowDeleteResultAlert(true);
+      setShowDeleteAlert(false);
     } catch (error) {
-      console.error("Error fetching members:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error deleting user:", error);
+      setDeleteStatus("error");
+      setShowDeleteResultAlert(true);
+      setShowDeleteAlert(false);
     }
   };
 
-  const handleEdit = (id) => {
-    router.push(`/admin/edit_member/${id}`);
-  };
-  
-  const handleDelete = async (id) => {
-    if (!id || typeof id !== "string") {
-      console.error("Invalid document ID:", id);
-      return;
-    }
-  
-    if (!confirm("Are you sure you want to delete this member?")) {
-      return;
-    }
-  
-    try {
-      const userDoc = await getDoc(doc(db, "users", id));
-      if (!userDoc.exists()) {
-        throw new Error("User document not found");
-      }
-  
-      const userData = userDoc.data();
-      const userEmail = userData.email;
-  
-      // Delete the user from Firestore
-      await deleteDoc(doc(db, "users", id));
-      console.log("Member deleted from Firestore:", id);
-  
-      // Call the Firebase function to delete the user from Authentication
-      const deleteAuthUser = httpsCallable(functions, "deleteAuthUser");
-      const result = await deleteAuthUser({ email: userEmail });
-      console.log("User deleted from Auth:", result.data.message);  // Log result from function
-  
-      setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 3000);
-  
-      await fetchMembers();
-    } catch (error) {
-      console.error("Error during deletion:", error);
-    }
+  const handleEditClick = (user) => {
+    router.push(`/admin/edit_member/${user.id}`);
   };
 
   const handleTabChange = (event) => {
@@ -115,17 +73,21 @@ export default function EditMember() {
     setActiveTab(selectedTab);
   };
 
-  const filteredMembers = members.filter((member) => {
+  const handleAddMemberClick = () => {
+    setShowAddMemberPopup(true); // แสดงป้อปอัพเพิ่มสมาชิก
+  };
+
+  const handleAddMemberSuccess = () => {
+    router.reload(); // รีเฟรชหน้าหลังจากเพิ่มสมาชิกสำเร็จ
+  };
+
+  const filteredMembers = users.filter((user) => {
     if (activeTab === "all") return true;
-    return member.role?.toLowerCase() === activeTab.toLowerCase();
+    return user.role?.toLowerCase() === activeTab.toLowerCase();
   });
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+    return <div>Loading...</div>;
   }
 
   return (
@@ -133,6 +95,7 @@ export default function EditMember() {
       <Head>
         <title>Members Management - Smart Parking</title>
       </Head>
+
       <div className="relative flex flex-col w-full h-full text-gray-700 bg-white shadow-md rounded-xl bg-clip-border mb-32">
         <div className="relative mx-4 mt-4 overflow-hidden text-gray-700 bg-white rounded-none bg-clip-border">
           <div className="flex items-center justify-between gap-8 mb-8">
@@ -140,15 +103,34 @@ export default function EditMember() {
               <h5 className="block font-sans text-xl antialiased font-semibold leading-snug tracking-normal text-blue-gray-900">
                 Members list
               </h5>
+
               <p className="block mt-1 font-sans text-base antialiased font-normal leading-relaxed text-gray-700">
                 See information about all members
               </p>
+            </div>
+
+            <div className="flex flex-col gap-2 shrink-0 sm:flex-row">
+              <button
+                className="flex select-none items-center gap-3 rounded-lg bg-gray-900 py-2 px-4 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-gray-900/10 transition-all hover:shadow-lg hover:shadow-gray-900/20 focus:opacity-[0.85] focus:shadow-none active:opacity-[0.85] active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+                type="button"
+                onClick={handleAddMemberClick} // เพิ่มการคลิกเพื่อแสดงป้อปอัพ
+              >
+                <Image
+                  src="/add-member-icon.svg"
+                  alt="Add Icon"
+                  width={20}
+                  height={20}
+                  className="w-4 h-4"
+                />
+                Add member
+              </button>
             </div>
           </div>
 
           <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
             <div className="block w-full overflow-hidden md:w-1/4 lg:w-1/5">
               <div className="mb-1">Filtered Members :</div>
+
               <nav>
                 <select
                   value={activeTab}
@@ -165,6 +147,7 @@ export default function EditMember() {
             </div>
           </div>
         </div>
+
         <div className="p-6 px-0 overflow-scroll">
           {loading ? (
             <p className="text-center">Loading...</p>
@@ -177,16 +160,19 @@ export default function EditMember() {
                       UserName
                     </p>
                   </th>
+
                   <th className="p-4 border-y border-blue-gray-100 bg-blue-gray-50/50">
                     <p className="block font-sans text-sm antialiased font-normal leading-none text-blue-gray-900 opacity-70">
                       Email
                     </p>
                   </th>
+
                   <th className="p-4 border-y border-blue-gray-100 bg-blue-gray-50/50">
                     <p className="block font-sans text-sm antialiased font-normal leading-none text-blue-gray-900 opacity-70">
                       Role
                     </p>
                   </th>
+
                   <th className="p-4 border-y border-blue-gray-100 bg-blue-gray-50/50">
                     <p className="block font-sans text-sm antialiased font-normal leading-none text-blue-gray-900 opacity-70">
                       Action
@@ -194,30 +180,33 @@ export default function EditMember() {
                   </th>
                 </tr>
               </thead>
+
               <tbody>
-                {filteredMembers.map((member) => (
-                  <tr key={member.id}>
+                {filteredMembers.map((user) => (
+                  <tr key={user.id}>
                     <td className="p-4 border-b border-blue-gray-50">
                       <p className="block font-sans text-sm antialiased font-normal leading-normal text-blue-gray-900">
-                        {member.username || "N/A"}
+                        {user.username || "N/A"}
                       </p>
                     </td>
+
                     <td className="p-4 border-b border-blue-gray-50">
                       <p className="block font-sans text-sm antialiased font-normal leading-normal text-blue-gray-900">
-                        {member.email || "N/A"}
+                        {user.email || "N/A"}
                       </p>
                     </td>
+
                     <td className="p-4 border-b border-blue-gray-50">
                       <span
                         className={`px-3 py-1 rounded-full text-sm ${
-                          member.role === "admin"
+                          user.role === "admin"
                             ? "bg-blue-100 text-blue-800"
-                            : member.role === "user"
+                            : user.role === "user"
                             ? "bg-green-100 text-green-800"
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {member.role || "N/A"}
+                        {user.role || "N/A"}
                       </span>
                     </td>
 
@@ -225,7 +214,7 @@ export default function EditMember() {
                       <button
                         className="relative h-10 max-h-[40px] w-10 max-w-[40px] select-none rounded-lg text-center align-middle font-sans text-xs font-medium uppercase text-gray-900 transition-all hover:bg-gray-900/10 active:bg-gray-900/20 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
                         type="button"
-                        onClick={() => handleEdit(member.id)}
+                        onClick={() => handleEditClick(user)}
                       >
                         <span className="absolute transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
                           <Image
@@ -237,10 +226,14 @@ export default function EditMember() {
                           />
                         </span>
                       </button>
+
                       <button
                         className="relative h-10 max-h-[40px] w-10 max-w-[40px] select-none rounded-lg text-center align-middle font-sans text-xs font-medium uppercase text-gray-900 transition-all hover:bg-gray-900/10 active:bg-gray-900/20 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
                         type="button"
-                        onClick={() => handleDelete(member.id)}
+                        onClick={() => {
+                          setMemberToDelete(user.id);
+                          setShowDeleteAlert(true);
+                        }}
                       >
                         <span className="absolute transform -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2">
                           <Image
@@ -260,10 +253,82 @@ export default function EditMember() {
           )}
         </div>
       </div>
+
+      {/* Custom Alert สำหรับการยืนยันการลบ */}
+      {showDeleteAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Confirm Deletion
+            </h3>
+
+            <p className="text-gray-500 mb-6">
+              Are you sure you want to delete this member?
+            </p>
+
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  handleDeleteUser(memberToDelete);
+                }}
+                className="px-4 py-2 bg-red-500 text-white font-medium rounded-md hover:bg-red-600 transition-colors"
+              >
+                Confirm
+              </button>
+
+              <button
+                onClick={() => setShowDeleteAlert(false)}
+                className="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Alert สำหรับแสดงผลลัพธ์การลบ */}
+      {showDeleteResultAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              {deleteStatus === "success" ? "Success" : "Error"}
+            </h3>
+
+            <p className="text-gray-500 mb-6">
+              {deleteStatus === "success"
+                ? "User deleted successfully!"
+                : "Failed to delete user. Please try again."}
+            </p>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  setShowDeleteResultAlert(false);
+                  if (deleteStatus === "success") {
+                    router.reload();
+                  }
+                }}
+                className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 transition-colors"
+              >
+                Okay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ป้อปอัพสำหรับเพิ่มสมาชิก */}
+      {showAddMemberPopup && (
+        <AddMemberPopup
+          onClose={() => setShowAddMemberPopup(false)}
+          onAddMemberSuccess={handleAddMemberSuccess}
+        />
+      )}
     </>
   );
 }
 
-EditMember.getLayout = function getLayout(page) {
+Edit_Member.getLayout = function getLayout(page) {
   return <Layout>{page}</Layout>;
 };

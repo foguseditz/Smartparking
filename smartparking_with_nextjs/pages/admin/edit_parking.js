@@ -1,197 +1,286 @@
 import Layout from "@/components/layout";
 import Head from "next/head";
-import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { db } from "@/pages/firebase/config";
+import {
+  doc,
+  onSnapshot,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 
-export default function EditParking() {
-  const [parkingRate, setParkingRate] = useState(20);
+export default function Edit_Parking() {
+  const [carCount, setCarCount] = useState(0);
+  const [totalSpaces, setTotalSpaces] = useState(0);
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [newTotalSpaces, setNewTotalSpaces] = useState(0);
+  const [parkingRate, setParkingRate] = useState(0);
   const [isEditingRate, setIsEditingRate] = useState(false);
-  const [newRate, setNewRate] = useState(parkingRate);
-  const [parkingSlot, setParkingSlot] = useState(8);
-  const [isEditingSlot, setIsEditingSlot] = useState(false);
-  const [newSlot, setNewSlot] = useState(parkingSlot);
+  const [newParkingRate, setNewParkingRate] = useState(0);
+  const [error, setError] = useState("");
 
-  const handleRateChange = () => {
-    setParkingRate(Number(newRate));
-    setIsEditingRate(false);
+  useEffect(() => {
+    // ค้นหา role โดยใช้ query
+    const checkRole = async () => {
+      try {
+        const usersRef = collection(db, "users");
+        // สร้าง query เพื่อหา document ที่มี role เป็น "admin"
+        const q = query(usersRef, where("role", "==", "admin"));
+        const querySnapshot = await getDocs(q);
+
+        // ถ้าเจอ document ที่มี role เป็น admin
+        if (!querySnapshot.empty) {
+          console.log("Found admin role");
+          setRole("admin");
+        } else {
+          console.log("No admin role found");
+          setRole("user");
+        }
+      } catch (err) {
+        console.error("Error checking role:", err);
+        setRole("user"); // default to user if error
+      }
+    };
+
+    // เรียกใช้ฟังก์ชัน checkRole
+    checkRole();
+
+    // ดึงข้อมูลที่จอดรถจาก Firestore
+    const parkingDocRef = doc(db, "parking", "parkingDocId");
+    const unsubscribeParking = onSnapshot(parkingDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setCarCount(docSnap.data().carCount || 0);
+        setTotalSpaces(docSnap.data().totalSpaces || 0);
+        setNewTotalSpaces(docSnap.data().totalSpaces || 0);
+        setParkingRate(docSnap.data().parkingRate || 0);
+        setNewParkingRate(docSnap.data().parkingRate || 0);
+      } else {
+        setError("Parking data not found!");
+      }
+      setLoading(false);
+    });
+
+    // Cleanup function
+    return () => {
+      unsubscribeParking();
+    };
+  }, []);
+
+  const updateTotalSpaces = async () => {
+    if (newTotalSpaces < 0) {
+      setError("Total spaces cannot be negative.");
+      return;
+    }
+    try {
+      const docRef = doc(db, "parking", "parkingDocId");
+      await updateDoc(docRef, { totalSpaces: newTotalSpaces });
+      setIsEditing(false);
+      setError("");
+    } catch (error) {
+      console.error("Error updating totalSpaces:", error);
+      setError("Failed to update total spaces. Please try again.");
+    }
   };
 
-  const handleSlotChange = () => {
-    setParkingSlot(Number(newSlot));
-    setIsEditingSlot(false);
+  const updateParkingRate = async () => {
+    if (newParkingRate < 0) {
+      setError("Parking rate cannot be negative.");
+      return;
+    }
+    try {
+      const docRef = doc(db, "parking", "parkingDocId");
+      await updateDoc(docRef, { parkingRate: newParkingRate });
+      setIsEditingRate(false);
+      setError("");
+    } catch (error) {
+      console.error("Error updating parking rate:", error);
+      setError("Failed to update parking rate. Please try again.");
+    }
   };
-  // แยก array ตามแถว
-  const topRowOccupied = [2, 4]; // รถในแถวบน
-  const bottomRowOccupied = [6, 5]; // รถในแถวล่าง
+
+  if (loading) {
+    return (
+      <div className="text-center mt-10">
+        <h1 className="text-3xl font-bold">Loading...</h1>
+      </div>
+    );
+  }
+
+  console.log("Role:", role); // ตรวจสอบค่า role
 
   return (
     <>
-      <Head>
-        <title>Edit Parking - Smart Parking</title>
-      </Head>
-
-      <div className="container mx-auto px-4">
-        <div className="text-center my-10">
-          <h1 className="text-3xl max-md:text-2xl font-bold text-[#333333]">
+      <div className="mb-20">
+        <Head>
+          <title>Parking Space - Smart Parking</title>
+        </Head>
+        <div className="text-center mt-6 md:mt-10">
+          <h1 className="text-2xl md:text-3xl font-bold text-[#333333]">
             Parking Space
           </h1>
         </div>
 
-        {/* Parking Grid */}
-        {/* First Row */}
-        <div className="flex flex-col items-center justify-center mt-8 space-y-0 max-md:5">
-          <div className="grid grid-cols-4 gap-0">
-            {[1, 2, 3, 4].map((space) => (
-              <div
-                key={`top-${space}`}
-                className="border border-t-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
-              >
-                <img
-                  src={
-                    topRowOccupied.includes(space)
-                      ? "/Car.png"
-                      : "/free_space.png"
-                  }
-                  alt={topRowOccupied.includes(space) ? "Car" : "Free Space"}
-                  className={
-                    topRowOccupied.includes(space)
-                      ? "w-32 h-36 md:w-36 md:h-40 m-auto"
-                      : "w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
-                  }
-                />
-              </div>
-            ))}
+        {error && (
+          <div className="text-center text-red-600 mt-4">
+            <p>{error}</p>
           </div>
-          {/* Second Row */}
-          <div className="grid grid-cols-4 gap-0">
-            {[5, 6, 7, 8].map((space) => (
-              <div
-                key={`bottom-${space}`}
-                className="border border-b-0 border-dashed border-gray-500 sm:w-36 sm:h-36 md:w-40 md:h-40 flex items-center justify-center"
-              >
-                <img
-                  src={
-                    bottomRowOccupied.includes(space)
-                      ? "/Car.png"
-                      : "/free_space.png"
-                  }
-                  alt={bottomRowOccupied.includes(space) ? "Car" : "Free Space"}
-                  className={
-                    bottomRowOccupied.includes(space)
-                      ? "w-32 h-36 md:w-36 md:h-40 m-auto"
-                      : "w-2/3 h-3/4 md:w-3/5 md:h-5/6 m-auto"
-                  }
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
-        {/* Parking Management */}
-        <div className="flex flex-col items-center mt-8 mb-4 px-4 sm:px-8 lg:px-16">
-          {/* Parking Rate Management */}
-          <div className="bg-gray-100 p-6 rounded-lg shadow-md w-full max-w-md sm:max-w-lg lg:max-w-xl mb-6">
-            <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
-              Parking Rate Management
+        <div className="flex flex-col items-center mt-6 md:mt-8 space-y-4">
+          {/* Cars Parked Section */}
+          <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <h2 className="text-xl md:text-2xl font-medium">
+              Cars Parked: {carCount} / {totalSpaces}
             </h2>
-            <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
-              <span className="text-gray-700">Parking Rate:</span>
-              {isEditingRate ? (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={newRate}
-                    onChange={(e) => setNewRate(e.target.value)}
-                    className="w-full sm:w-20 px-2 py-1 border rounded"
-                    min="0"
-                  />
+            {role === "admin" && (
+              <div className="flex items-center space-x-2">
+                {isEditing ? (
+                  <>
+                    <input
+                      type="number"
+                      value={newTotalSpaces}
+                      onChange={(e) =>
+                        setNewTotalSpaces(Number(e.target.value))
+                      }
+                      className="border border-gray-300 rounded-lg p-2 w-24 md:w-28"
+                      min="0"
+                    />
+                    <button
+                      onClick={updateTotalSpaces}
+                      className="px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm md:text-base"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className="px-3 md:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm md:text-base"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
                   <button
-                    onClick={handleRateChange}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                    onClick={() => setIsEditing(true)}
+                    className="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm md:text-base"
                   >
-                    Save
+                    Edit Spaces
                   </button>
-                  <button
-                    onClick={() => setIsEditingRate(false)}
-                    className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <span className="bg-gray-200 px-3 py-1 rounded">
-                    {parkingRate}
-                  </span>
-                  <span>Baht/Hour</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Parking Rate Section */}
+          <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+            <p className="text-lg md:text-2xl font-medium">
+              Parking Rate: {parkingRate} Baht/Hour
+            </p>
+            {role === "admin" && (
+              <div className="flex items-center space-x-2">
+                {isEditingRate ? (
+                  <>
+                    <input
+                      type="number"
+                      value={newParkingRate}
+                      onChange={(e) =>
+                        setNewParkingRate(Number(e.target.value))
+                      }
+                      className="border border-gray-300 rounded-lg p-2 w-24 md:w-28"
+                      min="0"
+                    />
+                    <button
+                      onClick={updateParkingRate}
+                      className="px-3 md:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm md:text-base"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setIsEditingRate(false)}
+                      className="px-3 md:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm md:text-base"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
                   <button
                     onClick={() => setIsEditingRate(true)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-3 md:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm md:text-base"
                   >
-                    Edit
+                    Edit Rate
                   </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Parking Slot Management */}
-          <div className="bg-gray-100 p-6 rounded-lg shadow-md w-full max-w-md sm:max-w-lg lg:max-w-xl">
-            <h2 className="text-xl font-semibold mb-4 text-center sm:text-left">
-              Parking Slot Management
-            </h2>
-            <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
-              <span className="text-gray-700">Number of Slots:</span>
-              {isEditingSlot ? (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={newSlot}
-                    onChange={(e) => {
-                      const value = Math.min(
-                        Math.max(Number(e.target.value), 1),
-                        8
-                      );
-                      setNewSlot(value);
-                    }}
-                    className="w-full sm:w-20 px-2 py-1 border rounded"
-                    min="1"
-                    max="8"
-                  />
-                  <button
-                    onClick={handleSlotChange}
-                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => setIsEditingSlot(false)}
-                    className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <span className="bg-gray-200 px-3 py-1 rounded">
-                    {parkingSlot}
-                  </span>
-                  <span>Slots</span>
-                  <button
-                    onClick={() => setIsEditingSlot(true)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                  >
-                    Edit
-                  </button>
-                </div>
-              )}
+        {/* Parking Grid */}
+        <div className="flex flex-col items-center justify-center mt-6 md:mt-8 space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-0">
+            {[...Array(totalSpaces)].map((_, index) => (
+              <div
+                key={index}
+                className="border-dashed border-gray-300 border-2 border-y-0 md:border-x-2 w-32 h-32 md:w-36 md:h-36 flex items-center justify-center"
+              >
+                <Image
+                  src={index < carCount ? "/Car.png" : "/free_space.png"}
+                  alt={index < carCount ? "Parked" : "Free"}
+                  width={80}
+                  height={80}
+                  className={
+                    index < carCount
+                      ? "w-20 h-20 md:w-24 md:h-24 object-contain"
+                      : "w-20 h-20 md:w-24 md:h-24 object-contain"
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex justify-center mt-6 md:mt-10">
+          <div className="w-full md:w-[50%] flex justify-center md:justify-end text-sm md:text-lg space-x-3">
+            <div className="flex items-center space-x-2">
+              <Image
+                src="/Car.png"
+                alt="Car"
+                width={40}
+                height={40}
+                className="w-10 h-10 md:w-12 md:h-12"
+              />
+              <span className="font-medium text-gray-700">: Parked</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 md:w-10 md:h-10 bg-[#BAD0FD] rounded-lg border border-gray-500"></div>
+              <span className="font-medium text-gray-700">: Free</span>
             </div>
           </div>
         </div>
+
+        {/* Access Parking Area Button - Only shown for non-admin users */}
+        {role !== "admin" && (
+          <div className="flex justify-center mt-5 mb-8 md:mb-32">
+            <Link
+              href="/user"
+              className="w-64 sm:w-72 md:w-96 h-10 sm:h-12 p-2 text-center bg-[#1E3A8A] text-white font-semibold text-sm md:text-lg rounded-xl shadow-xl hover:bg-blue-500"
+            >
+              Access Parking Area
+            </Link>
+          </div>
+        )}
       </div>
     </>
   );
 }
 
-EditParking.getLayout = function getLayout(page) {
+Edit_Parking.getLayout = function getLayout(page) {
   return <Layout>{page}</Layout>;
 };
