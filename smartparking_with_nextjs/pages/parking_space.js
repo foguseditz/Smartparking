@@ -135,7 +135,7 @@ export default function Parking_space() {
         {role !== "admin" && (
           <div className="flex justify-center mt-5 mb-8 md:mb-32">
             <Link
-              href="/user"
+              href="/user_scanqrcode"
               className="w-64 sm:w-72 md:w-96 h-10 sm:h-12 p-2 text-center bg-[#1E3A8A] text-white font-semibold text-sm md:text-lg rounded-xl shadow-xl hover:bg-blue-500"
             >
               Access Parking Area

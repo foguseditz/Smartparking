@@ -33,54 +33,66 @@ export default function Login() {
     setError("");
   };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+ const handleLogin = async (e) => {
+   e.preventDefault();
 
-    if (!formData.email || !formData.password) {
-      setError("Please fill in all fields.");
-      return;
-    }
+   if (!formData.email || !formData.password) {
+     setError("Please fill in all fields.");
+     return;
+   }
 
-    setLoading(true);
+   setLoading(true);
 
-    try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", formData.email));
-      const querySnapshot = await getDocs(q);
+   try {
+     const usersRef = collection(db, "users");
 
-      if (querySnapshot.empty) {
-        setError("User not found.");
-        return;
-      }
+     // ค้นหาผู้ใช้ด้วย email หรือ username
+     const emailQuery = query(usersRef, where("email", "==", formData.email));
+     const usernameQuery = query(
+       usersRef,
+       where("username", "==", formData.email)
+     );
 
-      const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data();
+     const [emailSnapshot, usernameSnapshot] = await Promise.all([
+       getDocs(emailQuery),
+       getDocs(usernameQuery),
+     ]);
 
-      // ตรวจสอบรหัสผ่านที่ถูกเข้ารหัส
-      const isPasswordValid = await bcrypt.compare(
-        formData.password,
-        userData.password
-      );
-      if (!isPasswordValid) {
-        setError("Incorrect password.");
-        return;
-      }
+     // รวมผลลัพธ์จากทั้งสอง query
+     const userDoc = emailSnapshot.docs[0] || usernameSnapshot.docs[0];
 
-      // บันทึกข้อมูลผู้ใช้ใน Local Storage
-      localStorage.setItem("user", JSON.stringify(userData));
+     if (!userDoc) {
+       setError("User not found.");
+       return;
+     }
 
-      // Redirect ตาม role
-      if (userData.role === "admin") {
-        router.replace("/admin"); // Redirect ไปหน้า Admin
-      } else {
-        router.replace("/parking_space"); // Redirect ไปหน้า User
-      }
-    } catch (err) {
-      setError("Login failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+     const userData = userDoc.data();
+
+     // ตรวจสอบรหัสผ่านที่ถูกเข้ารหัส
+     const isPasswordValid = await bcrypt.compare(
+       formData.password,
+       userData.password
+     );
+     if (!isPasswordValid) {
+       setError("Incorrect password.");
+       return;
+     }
+
+     // บันทึกข้อมูลผู้ใช้ใน Local Storage
+     localStorage.setItem("user", JSON.stringify(userData));
+
+     // Redirect ตาม role
+     if (userData.role === "admin") {
+       router.replace("/admin"); // Redirect ไปหน้า Admin
+     } else {
+       router.replace("/parking_space"); // Redirect ไปหน้า User
+     }
+   } catch (err) {
+     setError("Login failed. Please try again.");
+   } finally {
+     setLoading(false);
+   }
+ };
 
   if (!authChecked) {
     return null;
@@ -116,8 +128,8 @@ export default function Login() {
               <input
                 id="email"
                 name="email"
-                type="email"
-                placeholder="Email"
+                type="text"
+                placeholder="Email or Username"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
