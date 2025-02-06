@@ -9,6 +9,7 @@ import {
   where,
   setDoc,
   doc,
+  addDoc,
 } from "firebase/firestore";
 import { db } from "@/pages/firebase/config";
 import Head from "next/head";
@@ -101,7 +102,7 @@ export default function UserScan() {
       let user;
       try {
         user = JSON.parse(userDataStr);
-        console.log("Parsed user data:", user); // ตรวจสอบค่าที่ดึงมา
+        console.log("Parsed user data:", user);
       } catch (error) {
         console.error("Error parsing user data:", error);
         setError("Error reading user data");
@@ -114,27 +115,32 @@ export default function UserScan() {
         return;
       }
 
+      const startTime = new Date();
 
-      const startTime = new Date().getTime();
-      const parklogId = `${startTime}`;
+      // ใช้ `addDoc()` ให้ Firestore สร้าง `parklog_id` อัตโนมัติ
+      const parkingLogRef = collection(db, "users", user.uid, "parking_logs");
 
-      const parkingLogRef = doc(
-        db,
-        "users",
-        user.uid,
-        "parking_logs",
-        parklogId
-      );
-
-      await setDoc(parkingLogRef, {
+      const newLog = await addDoc(parkingLogRef, {
         start_time: startTime,
+        exit_time: null, // ยังไม่มีเวลาออก
         payment_status: false,
         total_amount: 0,
-        parklog_id: parklogId,
-        user_id: user.uid,
       });
 
-      console.log("Successfully saved parking log");
+      console.log("Successfully saved parking log with parklog_id:", newLog.id);
+
+      // เก็บ `parklog_id` ใน localStorage
+      localStorage.setItem("parklog_id", newLog.id);
+
+      // อัปเดต parklog_id ให้เป็น UID ที่ Firestore สร้าง
+      await setDoc(
+        doc(db, "users", user.uid, "parking_logs", newLog.id),
+        {
+          parklog_id: newLog.id,
+        },
+        { merge: true }
+      );
+
       setScanSuccess(true);
 
       setTimeout(() => {
