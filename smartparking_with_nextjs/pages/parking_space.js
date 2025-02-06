@@ -1,48 +1,39 @@
 import Layout from "@/components/layout";
 import Head from "next/head";
 import Image from "next/image";
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { db } from "@/pages/firebase/config";
-import {
-  doc,
-  onSnapshot,
-} from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
+import { useRouter } from "next/router"; // เพิ่ม import useRouter
 
 export default function Parking_space() {
+  const router = useRouter(); // เพิ่ม useRouter
   const [carCount, setCarCount] = useState(0);
   const [totalSpaces, setTotalSpaces] = useState(0);
-  const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [newTotalSpaces, setNewTotalSpaces] = useState(0);
   const [parkingRate, setParkingRate] = useState(0);
-  const [isEditingRate, setIsEditingRate] = useState(false);
-  const [newParkingRate, setNewParkingRate] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    
-
-    // ดึงข้อมูลที่จอดรถจาก Firestore
+    // อ้างอิงเอกสาร Firestore
     const parkingDocRef = doc(db, "parking", "parkingDocId");
-    const unsubscribeParking = onSnapshot(parkingDocRef, (docSnap) => {
+
+    const unsubscribe = onSnapshot(parkingDocRef, (docSnap) => {
       if (docSnap.exists()) {
-        setCarCount(docSnap.data().carCount || 0);
-        setTotalSpaces(docSnap.data().totalSpaces || 0);
-        setNewTotalSpaces(docSnap.data().totalSpaces || 0);
-        setParkingRate(docSnap.data().parkingRate || 0);
-        setNewParkingRate(docSnap.data().parkingRate || 0);
+        const data = docSnap.data();
+        setCarCount(data.carCount || 0);
+        setTotalSpaces(data.totalSpaces || 0);
+        setParkingRate(data.parkingRate || 0);
       } else {
         setError("Parking data not found!");
+        setCarCount(0);
+        setTotalSpaces(0);
+        setParkingRate(0);
       }
       setLoading(false);
     });
 
-    // Cleanup function
-    return () => {
-      unsubscribeParking();
-    };
+    return () => unsubscribe(); // Cleanup listener
   }, []);
 
   if (loading) {
@@ -52,6 +43,10 @@ export default function Parking_space() {
       </div>
     );
   }
+
+  const handleAccessParking = () => {
+    router.push("/user_scanqrcode");
+  };
 
   return (
     <>
@@ -71,23 +66,17 @@ export default function Parking_space() {
           </div>
         )}
 
+        {/* ข้อมูลที่จอดรถ */}
         <div className="flex flex-col items-center mt-6 md:mt-8 space-y-4">
-          {/* Cars Parked Section */}
-          <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <h2 className="text-xl md:text-2xl font-medium">
-              Cars Parked: {carCount} / {totalSpaces}
-            </h2>
-          </div>
-
-          {/* Parking Rate Section */}
-          <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <p className="text-lg md:text-2xl font-medium">
-              Parking Rate: {parkingRate} Baht/Hour
-            </p>
-          </div>
+          <h2 className="text-xl md:text-2xl font-medium">
+            Cars Parked: {carCount} / {totalSpaces}
+          </h2>
+          <p className="text-lg md:text-2xl font-medium">
+            Parking Rate: {parkingRate} Baht/Hour
+          </p>
         </div>
 
-        {/* Parking Grid */}
+        {/* แสดงที่จอดรถแบบ Grid */}
         <div className="flex flex-col items-center justify-center mt-6 md:mt-8 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-0">
             {[...Array(totalSpaces)].map((_, index) => (
@@ -100,18 +89,14 @@ export default function Parking_space() {
                   alt={index < carCount ? "Parked" : "Free"}
                   width={80}
                   height={80}
-                  className={
-                    index < carCount
-                      ? "w-20 h-20 md:w-24 md:h-24 object-contain"
-                      : "w-20 h-20 md:w-24 md:h-24 object-contain"
-                  }
+                  className="w-20 h-20 md:w-24 md:h-24 object-contain"
                 />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Legend */}
+        {/* คำอธิบายสัญลักษณ์ */}
         <div className="flex justify-center mt-6 md:mt-10">
           <div className="w-full md:w-[50%] flex justify-center md:justify-end text-sm md:text-lg space-x-3">
             <div className="flex items-center space-x-2">
@@ -130,18 +115,14 @@ export default function Parking_space() {
             </div>
           </div>
         </div>
-
-        {/* Access Parking Area Button - Only shown for non-admin users */}
-        {role !== "admin" && (
-          <div className="flex justify-center mt-5 mb-8 md:mb-32">
-            <Link
-              href="/user_scanqrcode"
-              className="w-64 sm:w-72 md:w-96 h-10 sm:h-12 p-2 text-center bg-[#1E3A8A] text-white font-semibold text-sm md:text-lg rounded-xl shadow-xl hover:bg-blue-500"
-            >
-              Access Parking Area
-            </Link>
-          </div>
-        )}
+        <div className="flex justify-center mt-5 mb-8 md:mb-32">
+          <button
+            onClick={handleAccessParking}
+            className="w-64 sm:w-72 md:w-96 h-10 sm:h-12 p-2 text-center bg-[#1E3A8A] text-white font-semibold text-sm md:text-lg rounded-xl shadow-xl hover:bg-blue-500"
+          >
+            Access Parking Area
+          </button>
+        </div>
       </div>
     </>
   );

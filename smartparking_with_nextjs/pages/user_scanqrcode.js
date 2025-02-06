@@ -1,6 +1,6 @@
 import Layout from "@/components/layout";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import {
   collection,
@@ -22,79 +22,132 @@ export default function UserScan() {
   });
   const [loading, setLoading] = useState(true);
   const [scanSuccess, setScanSuccess] = useState(false);
-  const [scanTimer, setScanTimer] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(120); // เวลาเริ่มต้น 2 นาที (120 วินาที)
+  const [timeLeft, setTimeLeft] = useState(120);
+  const [error, setError] = useState("");
+  const [isScanning, setIsScanning] = useState(false); // ย้าย state นี้ออกมาด้านบน
+  const scanTimerRef = useRef(null);
   const router = useRouter();
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (!user || !user.uid) {
-      router.push("/auth/login");
-      return;
-    }
-
-    const fetchUserData = async () => {
+    console.log("User data in localStorage:", localStorage.getItem("user"));
+    const checkAndFetchUserData = async () => {
       try {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("uid", "==", user.uid));
-        const querySnapshot = await getDocs(q);
+        const userDataStr = localStorage.getItem("user");
+        if (!userDataStr) {
+          console.log("No user data in localStorage");
+          return;
+        }
 
-        if (!querySnapshot.empty) {
-          const userDoc = querySnapshot.docs[0];
-          setUserData(userDoc.data());
-        } else {
-          console.error("No such document!");
+        const user = JSON.parse(userDataStr);
+        setUserData({
+          username: user.username || "",
+          email: user.email || "",
+          uid: user.uid || "",
+        });
+
+        try {
+          const usersRef = collection(db, "users");
+          const q = query(usersRef, where("uid", "==", user.uid));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty) {
+            const firestoreData = querySnapshot.docs[0].data();
+            setUserData((prevData) => ({
+              ...prevData,
+              ...firestoreData,
+            }));
+          }
+        } catch (firestoreError) {
+          console.log("Firestore fetch error:", firestoreError);
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.log("Error processing user data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUserData();
+    checkAndFetchUserData();
 
-    // จำกัดเวลาในการสแกน QR Code เป็น 2 นาที
-    const timer = setInterval(() => {
+    scanTimerRef.current = setInterval(() => {
       setTimeLeft((prevTime) => {
-        if (prevTime <= 0) {
-          clearInterval(timer);
-          alert("Scan time expired. Please try again.");
+        if (prevTime <= 1) {
+          clearInterval(scanTimerRef.current);
           router.push("/parking_space");
           return 0;
         }
         return prevTime - 1;
       });
-    }, 1000); // อัพเดททุก 1 วินาที
+    }, 1000);
 
-    setScanTimer(timer);
-
-    // Cleanup timer เมื่อ component unmount
-    return () => clearInterval(timer);
+    return () => {
+      if (scanTimerRef.current) {
+        clearInterval(scanTimerRef.current);
+      }
+    };
   }, [router]);
 
   const handleScanSuccess = async () => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    const startTime = new Date().getTime(); // เก็บเวลาเป็น timestamp
+    try {
+      setIsScanning(true);
 
-    // สร้าง ID สำหรับการจอดรถ (ตัวอย่าง: ใช้ timestamp)
-    const parklogId = new Date().getTime().toString();
+      const userDataStr = localStorage.getItem("user");
+      if (!userDataStr) {
+        console.error("No user data found in localStorage");
+        setError("User data not found");
+        return;
+      }
 
-    // บันทึกเวลาเข้าในฐานข้อมูล
-    await setDoc(doc(db, "users", user.uid, "parking_logs", parklogId), {
-      start_time: startTime, // เก็บเป็น timestamp
-      payment_status: false,
-      total_amount: 0,
-      parklog_id: parklogId,
-    });
+      let user;
+      try {
+        user = JSON.parse(userDataStr);
+        console.log("Parsed user data:", user); // ตรวจสอบค่าที่ดึงมา
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        setError("Error reading user data");
+        return;
+      }
 
-    setScanSuccess(true);
-    setTimeout(() => {
-      router.push("/status");
-    }, 2000); // แสดงป้อปอัพ 2 วินาทีแล้วไปหน้า status
+      if (!user || !user.uid) {
+        console.error("Invalid user data:", user);
+        setError("Invalid user data");
+        return;
+      }
+
+
+      const startTime = new Date().getTime();
+      const parklogId = `${startTime}`;
+
+      const parkingLogRef = doc(
+        db,
+        "users",
+        user.uid,
+        "parking_logs",
+        parklogId
+      );
+
+      await setDoc(parkingLogRef, {
+        start_time: startTime,
+        payment_status: false,
+        total_amount: 0,
+        parklog_id: parklogId,
+        user_id: user.uid,
+      });
+
+      console.log("Successfully saved parking log");
+      setScanSuccess(true);
+
+      setTimeout(() => {
+        router.push("/status");
+      }, 2000);
+    } catch (error) {
+      console.error("Error in handleScanSuccess:", error);
+      setError(error.message || "Failed to process scan");
+    } finally {
+      setIsScanning(false);
+    }
   };
 
-  // แปลงเวลาเป็นรูปแบบ นาที:วินาที
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -102,6 +155,22 @@ export default function UserScan() {
       remainingSeconds
     ).padStart(2, "0")}`;
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -118,7 +187,7 @@ export default function UserScan() {
               Username &nbsp; &nbsp; :
             </p>
             <p className="text-gray-700 ms-14 max-md:text-sm">
-              {userData.username || "Loading..."}
+              {userData.username}
             </p>
           </div>
           <div className="flex items-center mt-4">
@@ -126,19 +195,17 @@ export default function UserScan() {
               Email &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; :
             </p>
             <p className="text-gray-700 ms-14 max-md:text-sm">
-              {userData.email || "Loading..."}
+              {userData.email}
             </p>
           </div>
           <div className="my-9 justify-items-center">
-            {userData.email ? (
+            {userData.email && (
               <QRCodeCanvas
                 value={userData.email}
                 size={156}
                 level={"H"}
                 className="rounded-md shadow-xl m-auto"
               />
-            ) : (
-              <p>Loading QR Code...</p>
             )}
           </div>
           <div className="text-center mb-4">
@@ -148,9 +215,14 @@ export default function UserScan() {
           </div>
           <button
             onClick={handleScanSuccess}
-            className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
+            className={`w-full py-2 rounded-md transition duration-300 ${
+              isScanning
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600 text-white"
+            }`}
+            disabled={isScanning}
           >
-            Simulate QR Scan
+            {isScanning ? "Processing..." : "Simulate QR Scan"}
           </button>
         </div>
         {scanSuccess && (
@@ -163,6 +235,11 @@ export default function UserScan() {
                 You can now access the parking area.
               </p>
             </div>
+          </div>
+        )}
+        {error && (
+          <div className="mt-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
           </div>
         )}
       </div>
