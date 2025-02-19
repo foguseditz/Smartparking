@@ -1,12 +1,16 @@
 import Layout from "@/components/layout";
 import Head from "next/head";
 import Image from "next/image";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { db, storage } from "./firebase/config";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useState, useEffect, useRef } from "react";
+import { db } from "./firebase/config";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
+
+// ใช้ dynamic import เพื่อโหลด Teachable Machine เฉพาะฝั่ง client
+const tmImage = dynamic(() => import("@teachablemachine/image"), {
+  ssr: false,
+});
 
 export default function Payment() {
   const [showAlert, setShowAlert] = useState(false);
@@ -14,7 +18,10 @@ export default function Payment() {
   const [checkInTime, setCheckInTime] = useState("...");
   const [checkOutTime, setCheckOutTime] = useState("...");
   const [totalCost, setTotalCost] = useState("...");
+  const [prediction, setPrediction] = useState("Didn't Confirm yet");
+  const [imagePreview, setImagePreview] = useState(null);
   const router = useRouter();
+  const modelRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,52 +37,186 @@ export default function Payment() {
       if (logDoc.exists()) {
         const logData = logDoc.data();
         setCheckInTime(
-          new Date(logData.start_time.toMillis()).toLocaleString()
+          logData.start_time
+            ? new Date(logData.start_time.toMillis()).toLocaleString()
+            : "N/A"
         );
         setCheckOutTime(
-          new Date(logData.exit_time.toMillis()).toLocaleString()
+          logData.exit_time
+            ? new Date(logData.exit_time.toMillis()).toLocaleString()
+            : "N/A"
         );
         setTotalCost(logData.total_amount + " THB");
       }
     };
+
+    // โหลดโมเดลอัตโนมัติเมื่อเปิดหน้า
+    const loadModel = async () => {
+      const URL = `${window.location.origin}/my_model/`;
+      const modelURL = `${URL}model.json`;
+      const metadataURL = `${URL}metadata.json`;
+
+      try {
+        console.log("Loading model from:", modelURL);
+        modelRef.current = await (
+          await import("@teachablemachine/image")
+        ).load(modelURL, metadataURL);
+        console.log("Model loaded successfully");
+      } catch (error) {
+        console.error("Failed to load model:", error);
+      }
+    };
+
     fetchData();
+    loadModel();
   }, []);
 
-  const handleFileChange = (event) => setFile(event.target.files[0]);
+  const handleFileChange = (event) => {
+    const uploadedFile = event.target.files[0];
+    if (uploadedFile) {
+      setFile(uploadedFile);
 
-  const handlePaymentConfirmed = async (e) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(uploadedFile); // แปลงเป็น Base64
+      reader.onload = () => {
+        localStorage.setItem("payment_slip", reader.result); // บันทึกใน Local Storage
+      };
+
+      setImagePreview(URL.createObjectURL(uploadedFile)); // แสดง Preview
+    }
+  };
+
+  // ทำนายจากรูปภาพ
+  const predictFromImage = async () => {
+    if (!file || !modelRef.current) {
+      alert("Please upload an image.");
+      return false;
+    }
+
+    return new Promise((resolve) => {
+      const imageElement = document.createElement("img");
+      imageElement.src = URL.createObjectURL(file);
+      imageElement.onload = async () => {
+        const predictions = await modelRef.current.predict(imageElement);
+
+        // ดึงค่าของ Class 1 และ Class 2
+        const class1 = predictions.find((p) => p.className === "Class 1");
+        const class2 = predictions.find((p) => p.className === "Class 2");
+
+        if (class1 && class1.probability >= 0.7) {
+          setPrediction(`Class 1 - ${class1.probability.toFixed(2)}`);
+          resolve(true); // ✅ ผ่านการตรวจสอบ
+        } else {
+          setPrediction(`Its not look like slip `);
+          resolve(false); // ❌ ไม่ผ่านการตรวจสอบ
+        }
+      };
+    });
+  };
+
+  const handleUploadToServer = async () => {
+    if (!file) {
+        alert("Please select a file first.");
+        return;
+    }
+
+    const userData = localStorage.getItem("user");
+    if (!userData) {
+        alert("User not found. Please log in.");
+        return;
+    }
+
+    const user = JSON.parse(userData);  // ✅ ดึง `uid` จาก localStorage
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const response = await fetch("http://localhost:5000/upload", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "uid": user.uid, // ✅ ส่ง `uid` ใน headers
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("File uploaded successfully:", data.filePath);
+        setImagePreview(`http://localhost:5000${data.filePath}`); // ✅ แสดงภาพที่อัปโหลด
+
+    } catch (error) {
+        console.error("Upload failed:", error);
+        alert("Upload failed: " + error.message);
+    }
+};
+
+
+
+  const handlePaymentsFunctions = async (e) => {
+    e.preventDefault();  // ป้องกัน Form Reload
+
+    await handleUploadToServer();  // อัปโหลดไฟล์ก่อน
+    await handlePaymentConfirmed(e);  // ยืนยันการชำระเงิน
+};
+
+
+
+const handlePaymentConfirmed = async (e) => { 
     e.preventDefault();
     if (!file) {
-      alert("Please attach the payment slip before confirming payment.");
-      return;
+        alert("Please attach the payment slip before confirming payment.");
+        return;
+    }
+
+    // ตรวจสอบผล AI
+    const aiPass = await predictFromImage();
+    if (!aiPass) {
+        alert("Payment not confirmed, try with new slip");
+        return;
     }
 
     try {
-      const userData = localStorage.getItem("user");
-      const parklogId = localStorage.getItem("parklog_id");
-      if (!userData || !parklogId)
-        throw new Error("User or parking log ID not found");
+        const userData = localStorage.getItem("user");
+        const parklogId = localStorage.getItem("parklog_id");
+        if (!userData || !parklogId)
+            throw new Error("User or parking log ID not found");
 
-      const user = JSON.parse(userData);
-      const fileRef = ref(storage, `payment_slips/${user.uid}_${Date.now()}`);
-      await uploadBytes(fileRef, file);
-      const fileURL = await getDownloadURL(fileRef);
+        const user = JSON.parse(userData);
 
-      await setDoc(
-        doc(db, "users", user.uid, "parking_logs", parklogId),
-        {
-          payment_slip: fileURL,
-          payment_confirmed: true,
-        },
-        { merge: true }
-      );
+        // ✅ เพิ่ม timestamp
+        const paymentTimestamp = new Date(); // บันทึกเวลาปัจจุบัน
 
-      setShowAlert(true);
+        await setDoc(
+            doc(db, "users", user.uid, "parking_logs", parklogId),
+            {
+                payment_status: true, // ✅ อัปเดต payment_status เป็น true
+                ai_prediction: prediction, // ✅ บันทึกผล AI
+                start_time: null, // ✅ ล้างค่า start_time
+                exit_time: null, // ✅ ล้างค่า exit_time
+                payment_timestamp: paymentTimestamp, // ✅ บันทึก timestamp
+            },
+            { merge: true }
+        );
+
+        setCheckInTime("N/A"); // อัปเดตค่าใน UI
+        setCheckOutTime("N/A");
+        setShowAlert(true); // ✅ แสดง popup "Payment Successful"
+
+        // ✅ Redirect ไปหน้า Home หลังจาก 2 วินาที
+        setTimeout(() => {
+            router.push("/");
+        }, 2000);
+
     } catch (error) {
-      console.error("Error uploading payment slip:", error);
-      alert("Payment confirmation failed. Please try again.");
+        console.error("Error confirming payment:", error);
+        alert("Payment confirmation failed. Please try again.");
     }
-  };
+};
+
+
 
   return (
     <>
@@ -121,50 +262,30 @@ export default function Payment() {
             />
           </div>
 
+          {imagePreview && (
+            <div className="mt-4">
+              <p className="font-semibold text-sm">Preview:</p>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="max-w-xs rounded-md shadow-md"
+              />
+            </div>
+          )}
+
+          <p className="mt-4 text-lg font-semibold">
+            {showAlert ? "✅ Payment Confirmed" : ` ${prediction}`}
+          </p>
+
           <div className="mt-8 flex justify-end">
             <button
-              onClick={handlePaymentConfirmed}
-              className="bg-[#227c2f] px-6 sm:px-12 py-2.5 text-base sm:text-lg font-semibold text-white rounded-md hover:bg-[#559744] transition-colors duration-200"
+              onClick={(e) => handlePaymentsFunctions(e)}
+              className="bg-green-600 px-6 py-2 text-white rounded-md"
             >
               Payment Confirmed
             </button>
           </div>
         </div>
-
-        {showAlert && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-auto">
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                  <svg
-                    className="h-6 w-6 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Payment Successful!
-                </h3>
-                <div className="mt-4">
-                  <Link
-                    href="/parking_space"
-                    className="bg-[#227c2f] px-8 py-2 text-sm font-semibold text-white rounded-md hover:bg-[#559744] transition-colors duration-200"
-                  >
-                    Okay
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
