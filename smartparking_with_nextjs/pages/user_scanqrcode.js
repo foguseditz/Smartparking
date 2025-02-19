@@ -7,9 +7,8 @@ import {
   getDocs,
   query,
   where,
-  setDoc,
+  onSnapshot,
   doc,
-  addDoc,
 } from "firebase/firestore";
 import { db } from "@/pages/firebase/config";
 import Head from "next/head";
@@ -22,15 +21,16 @@ export default function UserScan() {
     uid: "",
   });
   const [loading, setLoading] = useState(true);
-  const [scanSuccess, setScanSuccess] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
   const [error, setError] = useState("");
-  const [isScanning, setIsScanning] = useState(false);
+  const [scanSuccess, setScanSuccess] = useState(false); // State สำหรับสถานะการสแกน
+  const [countdown, setCountdown] = useState(1); // เวลาในหน่วยวินาที
   const scanTimerRef = useRef(null);
+  const unsubscribeRef = useRef(null);
+  const hasRedirectedRef = useRef(false);
   const router = useRouter();
 
   useEffect(() => {
-    console.log("User data in localStorage:", localStorage.getItem("user"));
     const checkAndFetchUserData = async () => {
       try {
         const userDataStr = localStorage.getItem("user");
@@ -46,20 +46,58 @@ export default function UserScan() {
           uid: user.uid || "",
         });
 
-        try {
-          const usersRef = collection(db, "users");
-          const q = query(usersRef, where("uid", "==", user.uid));
-          const querySnapshot = await getDocs(q);
+        // Check for existing active parking session
+        if (user.uid) {
+          const parkingLogsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "parking_logs"
+          );
+          const activeSessionQuery = query(
+            parkingLogsRef,
+            where("exit_time", "==", null)
+          );
+          const activeSession = await getDocs(activeSessionQuery);
 
-          if (!querySnapshot.empty) {
-            const firestoreData = querySnapshot.docs[0].data();
-            setUserData((prevData) => ({
-              ...prevData,
-              ...firestoreData,
-            }));
+          if (!activeSession.empty) {
+            // If there's an active session, get its ID and redirect
+            const activeParkingLog = activeSession.docs[0];
+            localStorage.setItem("parklog_id", activeParkingLog.id);
+            router.push("/status");
+            return;
           }
-        } catch (firestoreError) {
-          console.log("Firestore fetch error:", firestoreError);
+
+          // Subscribe to new parking logs only if no active session
+          unsubscribeRef.current = onSnapshot(
+            activeSessionQuery,
+            (snapshot) => {
+              if (!hasRedirectedRef.current) {
+                // Check if we haven't redirected yet
+                snapshot.docChanges().forEach((change) => {
+                  if (change.type === "added") {
+                    hasRedirectedRef.current = true; // Mark that we're redirecting
+                    const parklogId = change.doc.id;
+                    localStorage.setItem("parklog_id", parklogId);
+                    setScanSuccess(true); // Set scan success to true when new log is added
+                    // Start countdown for 2.5 seconds
+                    const countdownInterval = setInterval(() => {
+                      setCountdown((prevCountdown) => {
+                        if (prevCountdown <= 0) {
+                          clearInterval(countdownInterval);
+                          router.push("/status");
+                        }
+                        return prevCountdown - 0.5;
+                      });
+                    }, 500); // Update every 500ms for smooth countdown
+                  }
+                });
+              }
+            },
+            (error) => {
+              console.error("Error listening to parking logs:", error);
+            }
+          );
         }
       } catch (error) {
         console.log("Error processing user data:", error);
@@ -70,6 +108,7 @@ export default function UserScan() {
 
     checkAndFetchUserData();
 
+    // Timer for page redirect
     scanTimerRef.current = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
@@ -81,73 +120,16 @@ export default function UserScan() {
       });
     }, 1000);
 
+    // Cleanup
     return () => {
       if (scanTimerRef.current) {
         clearInterval(scanTimerRef.current);
       }
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
     };
   }, [router]);
-
-  const handleScanSuccess = async () => {
-    try {
-      setIsScanning(true);
-
-      const userDataStr = localStorage.getItem("user");
-      if (!userDataStr) {
-        console.error("No user data found in localStorage");
-        setError("User data not found");
-        return;
-      }
-
-      let user;
-      try {
-        user = JSON.parse(userDataStr);
-        console.log("Parsed user data:", user);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-        setError("Error reading user data");
-        return;
-      }
-
-      if (!user || !user.uid) {
-        console.error("Invalid user data:", user);
-        setError("Invalid user data");
-        return;
-      }
-
-      const startTime = new Date();
-      const parkingLogRef = collection(db, "users", user.uid, "parking_logs");
-
-      const newLog = await addDoc(parkingLogRef, {
-        start_time: startTime,
-        exit_time: null,
-        payment_status: false,
-        total_amount: 0,
-      });
-
-      console.log("Successfully saved parking log with parklog_id:", newLog.id);
-      localStorage.setItem("parklog_id", newLog.id);
-
-      await setDoc(
-        doc(db, "users", user.uid, "parking_logs", newLog.id),
-        {
-          parklog_id: newLog.id,
-        },
-        { merge: true }
-      );
-
-      setScanSuccess(true);
-
-      setTimeout(() => {
-        router.push("/status");
-      }, 2000);
-    } catch (error) {
-      console.error("Error in handleScanSuccess:", error);
-      setError(error.message || "Failed to process scan");
-    } finally {
-      setIsScanning(false);
-    }
-  };
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -214,18 +196,9 @@ export default function UserScan() {
               Time left to scan: {formatTime(timeLeft)}
             </p>
           </div>
-          <button
-            onClick={handleScanSuccess}
-            className={`w-full py-2 rounded-md transition duration-300 ${
-              isScanning
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600 text-white"
-            }`}
-            disabled={isScanning}
-          >
-            {isScanning ? "Processing..." : "Simulate QR Scan"}
-          </button>
         </div>
+
+        {/* Popup for scan success */}
         {scanSuccess && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-auto">
@@ -233,14 +206,9 @@ export default function UserScan() {
                 Scan Successful!
               </h3>
               <p className="text-gray-500">
-                You can now access the parking area.
+                Redirecting to the parking status page
               </p>
             </div>
-          </div>
-        )}
-        {error && (
-          <div className="mt-4 p-2 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
           </div>
         )}
       </div>
