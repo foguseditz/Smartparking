@@ -25,7 +25,7 @@ export default function UserScan() {
   const [scanSuccess, setScanSuccess] = useState(false);
   const [timeLeft, setTimeLeft] = useState(120);
   const [error, setError] = useState("");
-  const [isScanning, setIsScanning] = useState(false); // ย้าย state นี้ออกมาด้านบน
+  const [isScanning, setIsScanning] = useState(false);
   const scanTimerRef = useRef(null);
   const router = useRouter();
 
@@ -116,23 +116,18 @@ export default function UserScan() {
       }
 
       const startTime = new Date();
-
-      // ใช้ `addDoc()` ให้ Firestore สร้าง `parklog_id` อัตโนมัติ
       const parkingLogRef = collection(db, "users", user.uid, "parking_logs");
 
       const newLog = await addDoc(parkingLogRef, {
         start_time: startTime,
-        exit_time: null, // ยังไม่มีเวลาออก
+        exit_time: null,
         payment_status: false,
         total_amount: 0,
       });
 
       console.log("Successfully saved parking log with parklog_id:", newLog.id);
-
-      // เก็บ `parklog_id` ใน localStorage
       localStorage.setItem("parklog_id", newLog.id);
 
-      // อัปเดต parklog_id ให้เป็น UID ที่ Firestore สร้าง
       await setDoc(
         doc(db, "users", user.uid, "parking_logs", newLog.id),
         {
@@ -205,9 +200,9 @@ export default function UserScan() {
             </p>
           </div>
           <div className="my-9 justify-items-center">
-            {userData.email && (
+            {userData.uid && (
               <QRCodeCanvas
-                value={userData.email}
+                value={userData.uid}
                 size={156}
                 level={"H"}
                 className="rounded-md shadow-xl m-auto"

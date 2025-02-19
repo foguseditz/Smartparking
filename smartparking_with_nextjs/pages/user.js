@@ -2,46 +2,47 @@ import Layout from "@/components/layout";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/pages/firebase/config";
 import Head from "next/head";
 import { QRCodeCanvas } from "qrcode.react";
 
 export default function User() {
-  const [userData, setUserData] = useState({ username: "", email: "" });
+  const [userData, setUserData] = useState({
+    username: "",
+    email: "",
+    uid: "",
+  });
   const [loading, setLoading] = useState(true);
   const [showAlert, setShowAlert] = useState(false);
   const router = useRouter();
 
-useEffect(() => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || !user.email) {
-    // ใช้ email แทน uid
-    router.push("/auth/login");
-    return;
-  }
-
-  const fetchUserData = async () => {
-    try {
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", user.email)); // ใช้ email เพื่อค้นหา
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        const userDoc = querySnapshot.docs[0];
-        setUserData(userDoc.data());
-      } else {
-        console.error("No such document!");
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.uid) {
+      router.push("/auth/login");
+      return;
     }
-  };
 
-  fetchUserData();
-}, [router]);
+    const fetchUserData = async () => {
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userSnapshot = await getDoc(userDocRef);
+
+        if (userSnapshot.exists()) {
+          setUserData({ ...userSnapshot.data(), uid: user.uid });
+        } else {
+          console.error("No such document!");
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [router]);
 
   const handleSignOutConfirm = () => {
     localStorage.removeItem("user");
@@ -100,9 +101,9 @@ useEffect(() => {
             </p>
           </div>
           <div className="my-9 justify-items-center">
-            {userData.email ? (
+            {userData.uid ? (
               <QRCodeCanvas
-                value={userData.email}
+                value={userData.uid}
                 size={156}
                 level={"H"}
                 className="rounded-md shadow-xl m-auto"
