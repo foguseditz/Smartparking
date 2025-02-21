@@ -1,7 +1,8 @@
+// นำเข้า components และ dependencies ที่ใช้ในโปรเจกต์
 import Layout from "@/components/layout";
-import Image from "next/image";
-import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/router";
+import Image from "next/image"; // ใช้สำหรับจัดการรูปภาพใน Next.js
+import { useEffect, useState, useRef } from "react"; // Hook สำหรับจัดการ state และ lifecycle
+import { useRouter } from "next/router"; // ใช้สำหรับการเปลี่ยนหน้า
 import {
   collection,
   getDocs,
@@ -9,36 +10,41 @@ import {
   where,
   onSnapshot,
   doc,
-} from "firebase/firestore";
-import { db } from "@/pages/firebase/config";
-import Head from "next/head";
-import { QRCodeCanvas } from "qrcode.react";
+} from "firebase/firestore"; // นำเข้าฟังก์ชันสำหรับจัดการ Firestore
+import { db } from "@/pages/firebase/config"; // ไฟล์ config ของ Firebase
+import Head from "next/head"; // ใช้สำหรับตั้งค่า <head> ใน HTML
+import { QRCodeCanvas } from "qrcode.react"; // ใช้สำหรับสร้าง QR Code
 
-export default function UserScan() {
+// ฟังก์ชันหลักของ component
+export default function ScanEntry() {
+  // กำหนด state ต่าง ๆ สำหรับการจัดการข้อมูล
   const [userData, setUserData] = useState({
     username: "",
     email: "",
     uid: "",
-  });
-  const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState(120);
-  const [error, setError] = useState("");
-  const [scanSuccess, setScanSuccess] = useState(false); // State สำหรับสถานะการสแกน
-  const [countdown, setCountdown] = useState(1); // เวลาในหน่วยวินาที
-  const scanTimerRef = useRef(null);
-  const unsubscribeRef = useRef(null);
-  const hasRedirectedRef = useRef(false);
-  const router = useRouter();
+  }); // เก็บข้อมูลของผู้ใช้งาน
+  const [loading, setLoading] = useState(true); // สถานะการโหลดข้อมูล
+  const [timeLeft, setTimeLeft] = useState(120); // เวลาที่เหลือในการสแกน QR Code
+  const [error, setError] = useState(""); // เก็บข้อความ error
+  const [scanSuccess, setScanSuccess] = useState(false); // เก็บสถานะการสแกนสำเร็จ
+  const [countdown, setCountdown] = useState(1); // เวลานับถอยหลังก่อน redirect
+  const scanTimerRef = useRef(null); // ตัวแปรอ้างอิงสำหรับตัวจับเวลา
+  const unsubscribeRef = useRef(null); // ตัวแปรอ้างอิงสำหรับ unsubscribe การเปลี่ยนแปลงข้อมูล Firestore
+  const hasRedirectedRef = useRef(false); // ตรวจสอบว่าได้เปลี่ยนหน้าแล้วหรือยัง
+  const router = useRouter(); // ใช้สำหรับการเปลี่ยนหน้าใน Next.js
 
+  // useEffect สำหรับการตรวจสอบข้อมูลผู้ใช้งานและ subscribe การเปลี่ยนแปลงข้อมูลใน Firestore
   useEffect(() => {
     const checkAndFetchUserData = async () => {
       try {
+        // ดึงข้อมูลผู้ใช้งานจาก localStorage
         const userDataStr = localStorage.getItem("user");
         if (!userDataStr) {
           console.log("No user data in localStorage");
           return;
         }
 
+        // แปลงข้อมูลจาก JSON และตั้งค่า state ของข้อมูลผู้ใช้
         const user = JSON.parse(userDataStr);
         setUserData({
           username: user.username || "",
@@ -46,7 +52,7 @@ export default function UserScan() {
           uid: user.uid || "",
         });
 
-        // Check for existing active parking session
+        // ตรวจสอบว่าผู้ใช้งานมี session การจอดรถที่ยังไม่ปิดอยู่หรือไม่
         if (user.uid) {
           const parkingLogsRef = collection(
             db,
@@ -60,27 +66,27 @@ export default function UserScan() {
           );
           const activeSession = await getDocs(activeSessionQuery);
 
+          // ถ้ามี session ที่ยังไม่ปิด ให้เปลี่ยนหน้าไปยัง status page
           if (!activeSession.empty) {
-            // If there's an active session, get its ID and redirect
             const activeParkingLog = activeSession.docs[0];
             localStorage.setItem("parklog_id", activeParkingLog.id);
             router.push("/status");
             return;
           }
 
-          // Subscribe to new parking logs only if no active session
+          // Subscribe การเปลี่ยนแปลงใน Firestore ถ้าไม่มี session ที่เปิดอยู่
           unsubscribeRef.current = onSnapshot(
             activeSessionQuery,
             (snapshot) => {
               if (!hasRedirectedRef.current) {
-                // Check if we haven't redirected yet
                 snapshot.docChanges().forEach((change) => {
                   if (change.type === "added") {
-                    hasRedirectedRef.current = true; // Mark that we're redirecting
+                    hasRedirectedRef.current = true; // ตั้งค่าว่าได้ redirect แล้ว
                     const parklogId = change.doc.id;
                     localStorage.setItem("parklog_id", parklogId);
-                    setScanSuccess(true); // Set scan success to true when new log is added
-                    // Start countdown for 2.5 seconds
+                    setScanSuccess(true); // ตั้งค่าสถานะการสแกนสำเร็จ
+
+                    // นับถอยหลังก่อน redirect ไปยัง status page
                     const countdownInterval = setInterval(() => {
                       setCountdown((prevCountdown) => {
                         if (prevCountdown <= 0) {
@@ -89,7 +95,7 @@ export default function UserScan() {
                         }
                         return prevCountdown - 0.5;
                       });
-                    }, 500); // Update every 500ms for smooth countdown
+                    }, 500); // อัปเดตทุก 500ms
                   }
                 });
               }
@@ -102,13 +108,13 @@ export default function UserScan() {
       } catch (error) {
         console.log("Error processing user data:", error);
       } finally {
-        setLoading(false);
+        setLoading(false); // ตั้งค่าสถานะว่าโหลดเสร็จแล้ว
       }
     };
 
     checkAndFetchUserData();
 
-    // Timer for page redirect
+    // ตั้ง timer สำหรับ redirect ไปยังหน้าที่จอดรถถ้าเวลาหมด
     scanTimerRef.current = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
@@ -120,7 +126,7 @@ export default function UserScan() {
       });
     }, 1000);
 
-    // Cleanup
+    // Cleanup function เพื่อ clear timer และ unsubscribe Firestore เมื่อ component ถูกทำลาย
     return () => {
       if (scanTimerRef.current) {
         clearInterval(scanTimerRef.current);
@@ -131,6 +137,7 @@ export default function UserScan() {
     };
   }, [router]);
 
+  // ฟังก์ชันสำหรับแปลงเวลาเป็นรูปแบบ mm:ss
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -139,6 +146,7 @@ export default function UserScan() {
     ).padStart(2, "0")}`;
   };
 
+  // แสดงข้อความ Loading ถ้าข้อมูลยังไม่โหลดเสร็จ
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -147,6 +155,7 @@ export default function UserScan() {
     );
   }
 
+  // แสดงข้อความ error ถ้ามีข้อผิดพลาด
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -155,6 +164,7 @@ export default function UserScan() {
     );
   }
 
+  // แสดงข้อมูลผู้ใช้งานและ QR Code
   return (
     <>
       <Head>
@@ -198,7 +208,7 @@ export default function UserScan() {
           </div>
         </div>
 
-        {/* Popup for scan success */}
+        {/* Popup สำหรับแจ้งเตือนการสแกนสำเร็จ */}
         {scanSuccess && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-auto">
@@ -216,6 +226,7 @@ export default function UserScan() {
   );
 }
 
-UserScan.getLayout = function getLayout(page) {
+// กำหนด layout สำหรับ component
+ScanEntry.getLayout = function getLayout(page) {
   return <Layout>{page}</Layout>;
 };

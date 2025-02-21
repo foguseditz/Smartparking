@@ -15,6 +15,7 @@ export default function Status() {
   });
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [processingExit, setProcessingExit] = useState(false);
   const router = useRouter();
   const intervalRef = useRef(null);
 
@@ -39,14 +40,33 @@ export default function Status() {
           doc(db, "users", user.uid, "parking_logs", parklogId)
         );
 
-        if (logDoc.exists() && logDoc.data().start_time) {
-          const timestamp = logDoc.data().start_time;
-          const timeValue = timestamp?.toMillis?.() || timestamp;
+        if (logDoc.exists()) {
+          const startTime = logDoc.data().start_time;
+          const exitTime = logDoc.data().exit_time;
 
-          setStartTime(timeValue);
-          setIsTimerRunning(true);
+          if (startTime) {
+            const timeValue = startTime?.toMillis?.() || startTime;
+            setStartTime(timeValue);
+            setIsTimerRunning(true);
+          }
+
+          if (exitTime) {
+            setIsTimerRunning(false);
+            setDuration({
+              hours: Math.floor(
+                (exitTime.toMillis() - startTime?.toMillis()) / 3600000
+              ),
+              minutes: Math.floor(
+                ((exitTime.toMillis() - startTime?.toMillis()) % 3600000) /
+                  60000
+              ),
+              seconds: Math.floor(
+                ((exitTime.toMillis() - startTime?.toMillis()) % 60000) / 1000
+              ),
+            });
+          }
         } else {
-          setIsTimerRunning(false);
+          router.push("/parking_space");
         }
       } catch (error) {
         console.error("Error fetching parking log:", error);
@@ -56,12 +76,14 @@ export default function Status() {
     };
 
     fetchStartTime();
+
+    return () => clearInterval(intervalRef.current);
   }, [router]);
 
   useEffect(() => {
     if (!startTime || !isTimerRunning) return;
 
-    intervalRef.current = setInterval(() => {
+    const updateDuration = () => {
       const now = Date.now();
       const diff = now - startTime;
 
@@ -70,7 +92,10 @@ export default function Status() {
         minutes: Math.floor((diff % 3600000) / 60000),
         seconds: Math.floor((diff % 60000) / 1000),
       });
-    }, 1000);
+    };
+
+    updateDuration();
+    intervalRef.current = setInterval(updateDuration, 1000);
 
     return () => clearInterval(intervalRef.current);
   }, [isTimerRunning, startTime]);
@@ -79,6 +104,8 @@ export default function Status() {
 
   const handleConfirmLeave = async () => {
     try {
+      setProcessingExit(true);
+
       const userData = localStorage.getItem("user");
       const parklogId = localStorage.getItem("parklog_id");
 
@@ -90,12 +117,11 @@ export default function Status() {
 
       const endTime = Date.now();
 
-      // ดึงข้อมูล parking rate จาก collection parking โดยใช้ ID "parkingDocId"
+      // ดึงข้อมูลจาก Firestore
       const parkingDoc = await getDoc(doc(db, "parking", "parkingDocId"));
       if (!parkingDoc.exists())
         throw new Error("Parking information not found");
 
-      // คำนวณระยะเวลาจอด
       const logDoc = await getDoc(
         doc(db, "users", user.uid, "parking_logs", parklogId)
       );
@@ -103,14 +129,14 @@ export default function Status() {
 
       const startTimeValue =
         logDoc.data().start_time?.toMillis?.() || logDoc.data().start_time;
-      const diffInMinutes = Math.ceil((endTime - startTimeValue) / 60000);
+      const diffInMinutes = Math.floor((endTime - startTimeValue) / 60000);
 
-      // คำนวณค่าบริการจาก parkingRate
+      const parkingRatePerMinute = parkingDoc.data().parkingRate || 0;
       const totalAmount = parseFloat(
-        ((diffInMinutes / 60) * parkingDoc.data().parkingRate).toFixed(2)
+        (diffInMinutes * parkingRatePerMinute).toFixed(2)
       );
 
-      // อัพเดท parking log
+      // บันทึก exit_time และ total_amount ลงใน Firestore
       await setDoc(
         doc(db, "users", user.uid, "parking_logs", parklogId),
         {
@@ -120,13 +146,31 @@ export default function Status() {
         { merge: true }
       );
 
-      setIsTimerRunning(false);
-      setDuration({ hours: 0, minutes: 0, seconds: 0 });
-      router.push("/payment");
+      const updatedLog = await getDoc(
+        doc(db, "users", user.uid, "parking_logs", parklogId)
+      );
+
+      if (!updatedLog.exists()) {
+        throw new Error("Failed to update parking log");
+      }
+
+      // บันทึกข้อมูล waitingForExitScan ใน localStorage
+      localStorage.setItem(
+        "exitScanData",
+        JSON.stringify({
+          waitingForExitScan: true,
+          originalParklogId: parklogId,
+        })
+      );
+
+      setShowAlert(false);
+      router.push("/scan_exit");
     } catch (error) {
       console.error("Error:", error);
       alert(error.message);
       setShowAlert(false);
+    } finally {
+      setProcessingExit(false);
     }
   };
 
@@ -157,9 +201,12 @@ export default function Status() {
             <div className="mt-5 flex justify-center">
               <button
                 onClick={handleLeaveParking}
-                className="rounded-md bg-[#E83C3F] px-6 sm:px-20 py-2.5 text-base sm:text-lg font-semibold text-white shadow-sm hover:bg-red-300"
+                disabled={processingExit}
+                className={`rounded-md bg-[#E83C3F] px-6 sm:px-20 py-2.5 text-base sm:text-lg font-semibold text-white shadow-sm hover:bg-red-300 ${
+                  processingExit ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                Leave Parking Area
+                {processingExit ? "Processing..." : "Leave Parking Area"}
               </button>
             </div>
 
@@ -175,12 +222,16 @@ export default function Status() {
                   <div className="flex justify-end space-x-4">
                     <button
                       onClick={handleConfirmLeave}
-                      className="px-4 py-2 bg-red-500 text-white font-medium rounded-md hover:bg-red-600"
+                      disabled={processingExit}
+                      className={`px-4 py-2 bg-red-500 text-white font-medium rounded-md hover:bg-red-600 ${
+                        processingExit ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     >
-                      Confirm
+                      {processingExit ? "Processing..." : "Confirm"}
                     </button>
                     <button
                       onClick={() => setShowAlert(false)}
+                      disabled={processingExit}
                       className="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium rounded-md"
                     >
                       Cancel

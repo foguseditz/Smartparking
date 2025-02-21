@@ -13,6 +13,7 @@ export default function Parking_space() {
   const [loading, setLoading] = useState(true);
   const [parkingRate, setParkingRate] = useState(0);
   const [error, setError] = useState("");
+  const [showModal, setShowModal] = useState(false); // เพิ่ม state สำหรับปิด/เปิดป๊อปอัพ
 
   useEffect(() => {
     // อ้างอิงเอกสาร Firestore
@@ -45,7 +46,15 @@ export default function Parking_space() {
   }
 
   const handleAccessParking = () => {
-    router.push("/user_scanqrcode");
+    if (carCount === totalSpaces) {
+      setShowModal(true); // ถ้าจำนวนรถเต็ม จะเปิดป๊อปอัพ
+    } else {
+      router.push("/scan_entry");
+    }
+  };
+
+  const closeModal = () => {
+    setShowModal(false); // ปิดป๊อปอัพ
   };
 
   return (
@@ -72,7 +81,7 @@ export default function Parking_space() {
             Cars Parked: {carCount} / {totalSpaces}
           </h2>
           <p className="text-lg md:text-2xl font-medium">
-            Parking Rate: {parkingRate} Baht/Hour
+            Parking Rate: {parkingRate} Baht/Minute
           </p>
         </div>
 
@@ -124,6 +133,28 @@ export default function Parking_space() {
           </button>
         </div>
       </div>
+
+      {/* ป๊อปอัพแจ้งเตือน */}
+      {showModal && (
+        <div className="fixed inset-0 flex justify-center items-center bg-gray-500 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-xl font-semibold mb-4 text-center">
+              No Parking Spaces Available
+            </h2>
+            <p className="text-center mb-4">
+              Currently, all parking spaces are full. Please try again later.
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={closeModal}
+                className="w-32 h-10 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
