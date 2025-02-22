@@ -165,56 +165,57 @@ export default function Payment() {
 
 
 const handlePaymentConfirmed = async (e) => { 
-    e.preventDefault();
-    if (!file) {
-        alert("Please attach the payment slip before confirming payment.");
-        return;
-    }
+  e.preventDefault();
+  if (!file) {
+      alert("Please attach the payment slip before confirming payment.");
+      return;
+  }
 
-    // ตรวจสอบผล AI
-    const aiPass = await predictFromImage();
-    if (!aiPass) {
-        alert("Payment not confirmed, try with new slip");
-        return;
-    }
+  // ตรวจสอบผล AI
+  const aiPass = await predictFromImage();
+  if (!aiPass) {
+      alert("Payment not confirmed, try with new slip");
+      return;
+  }
 
-    try {
-        const userData = localStorage.getItem("user");
-        const parklogId = localStorage.getItem("parklog_id");
-        if (!userData || !parklogId)
-            throw new Error("User or parking log ID not found");
+  try {
+      const userData = localStorage.getItem("user");
+      const parklogId = localStorage.getItem("parklog_id");
+      if (!userData || !parklogId)
+          throw new Error("User or parking log ID not found");
 
-        const user = JSON.parse(userData);
+      const user = JSON.parse(userData);
 
-        // ✅ เพิ่ม timestamp
-        const paymentTimestamp = new Date(); // บันทึกเวลาปัจจุบัน
+      // ✅ เพิ่ม timestamp
+      const paymentTimestamp = new Date(); // บันทึกเวลาปัจจุบัน
 
-        await setDoc(
-            doc(db, "users", user.uid, "parking_logs", parklogId),
-            {
-                payment_status: true, // ✅ อัปเดต payment_status เป็น true
-                ai_prediction: prediction, // ✅ บันทึกผล AI
-                start_time: null, // ✅ ล้างค่า start_time
-                exit_time: null, // ✅ ล้างค่า exit_time
-                payment_timestamp: paymentTimestamp, // ✅ บันทึก timestamp
-            },
-            { merge: true }
-        );
+      await setDoc(
+          doc(db, "users", user.uid, "parking_logs", parklogId),
+          {
+              payment_status: true, // ✅ อัปเดต payment_status เป็น true
+              ai_prediction: prediction, // ✅ บันทึกผล AI
+              start_time: null, // ✅ ล้างค่า start_time
+              exit_time: null, // ✅ ล้างค่า exit_time
+              payment_timestamp: paymentTimestamp, // ✅ บันทึก timestamp
+          },
+          { merge: true }
+      );
 
-        setCheckInTime("N/A"); // อัปเดตค่าใน UI
-        setCheckOutTime("N/A");
-        setShowAlert(true); // ✅ แสดง popup "Payment Successful"
+      setCheckInTime("null"); // อัปเดตค่าใน UI
+      setCheckOutTime("null");
+      setShowAlert(true); // ✅ แสดง popup "Payment Successful"
 
-        // ✅ Redirect ไปหน้า Home หลังจาก 2 วินาที
-        setTimeout(() => {
-            router.push("/");
-        }, 2000);
+      // ✅ ล้างค่า parklog_id และ Redirect ไปสแกน QR Code ใหม่
+      setTimeout(() => {
+          router.push("/scan_exit"); // ✅ ให้ไปที่หน้าสแกน QR Code ใหม่
+      }, 2000);
 
-    } catch (error) {
-        console.error("Error confirming payment:", error);
-        alert("Payment confirmation failed. Please try again.");
-    }
+  } catch (error) {
+      console.error("Error confirming payment:", error);
+      alert("Payment confirmation failed. Please try again.");
+  }
 };
+
 
 
 

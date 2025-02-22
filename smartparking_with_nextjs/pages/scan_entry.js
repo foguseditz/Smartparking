@@ -10,6 +10,8 @@ import {
   where,
   onSnapshot,
   doc,
+  setDoc,
+  addDoc,
 } from "firebase/firestore"; // นำเข้าฟังก์ชันสำหรับจัดการ Firestore
 import { db } from "@/pages/firebase/config"; // ไฟล์ config ของ Firebase
 import Head from "next/head"; // ใช้สำหรับตั้งค่า <head> ใน HTML
@@ -26,12 +28,74 @@ export default function ScanEntry() {
   const [loading, setLoading] = useState(true); // สถานะการโหลดข้อมูล
   const [timeLeft, setTimeLeft] = useState(120); // เวลาที่เหลือในการสแกน QR Code
   const [error, setError] = useState(""); // เก็บข้อความ error
+  const [isScanning, setIsScanning] = useState(false);
   const [scanSuccess, setScanSuccess] = useState(false); // เก็บสถานะการสแกนสำเร็จ
   const [countdown, setCountdown] = useState(1); // เวลานับถอยหลังก่อน redirect
   const scanTimerRef = useRef(null); // ตัวแปรอ้างอิงสำหรับตัวจับเวลา
   const unsubscribeRef = useRef(null); // ตัวแปรอ้างอิงสำหรับ unsubscribe การเปลี่ยนแปลงข้อมูล Firestore
   const hasRedirectedRef = useRef(false); // ตรวจสอบว่าได้เปลี่ยนหน้าแล้วหรือยัง
   const router = useRouter(); // ใช้สำหรับการเปลี่ยนหน้าใน Next.js
+  const handleScanSuccess = async () => {
+    try {
+      setIsScanning(true);
+
+      const userDataStr = localStorage.getItem("user");
+      if (!userDataStr) {
+        console.error("No user data found in localStorage");
+        setError("User data not found");
+        return;
+      }
+
+      let user;
+      try {
+        user = JSON.parse(userDataStr);
+        console.log("Parsed user data:", user);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+        setError("Error reading user data");
+        return;
+      }
+
+      if (!user || !user.uid) {
+        console.error("Invalid user data:", user);
+        setError("Invalid user data");
+        return;
+      }
+
+      const startTime = new Date();
+      const parkingLogRef = collection(db, "users", user.uid, "parking_logs");
+
+      const newLog = await addDoc(parkingLogRef, {
+        start_time: startTime,
+        exit_time: null,
+        payment_status: false,
+        total_amount: 0,
+      });
+
+      console.log("Successfully saved parking log with parklog_id:", newLog.id);
+      localStorage.setItem("parklog_id", newLog.id);
+
+      await setDoc(
+        doc(db, "users", user.uid, "parking_logs", newLog.id),
+        {
+          parklog_id: newLog.id,
+        },
+        { merge: true }
+      );
+
+      setScanSuccess(true);
+
+      setTimeout(() => {
+        router.push("/status");
+      }, 2000);
+    } catch (error) {
+      console.error("Error in handleScanSuccess:", error);
+      setError(error.message || "Failed to process scan");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
 
   // useEffect สำหรับการตรวจสอบข้อมูลผู้ใช้งานและ subscribe การเปลี่ยนแปลงข้อมูลใน Firestore
   useEffect(() => {
@@ -54,17 +118,26 @@ export default function ScanEntry() {
 
         // ตรวจสอบว่าผู้ใช้งานมี session การจอดรถที่ยังไม่ปิดอยู่หรือไม่
         if (user.uid) {
-          const parkingLogsRef = collection(
-            db,
-            "users",
-            user.uid,
-            "parking_logs"
-          );
-          const activeSessionQuery = query(
-            parkingLogsRef,
-            where("exit_time", "==", null)
-          );
-          const activeSession = await getDocs(activeSessionQuery);
+          const parkingLogsRef = collection(db, "users", user.uid, "parking_logs");
+
+          // ✅ ค้นหา log ที่ยังไม่ได้จ่ายเงิน
+          const unpaidSessionQuery = query(parkingLogsRef, where("payment_status", "==", false));
+          const unpaidSession = await getDocs(unpaidSessionQuery);
+
+          if (!unpaidSession.empty) {
+              console.log("🚗 Unpaid Parking Log Found");
+              return;
+          }
+
+          // ✅ ค้นหา log ที่จ่ายเงินแล้ว
+          const paidSessionQuery = query(parkingLogsRef, where("payment_status", "==", true));
+          const paidSession = await getDocs(paidSessionQuery);
+
+          if (!paidSession.empty) {
+              console.log("✅ Payment completed, clearing session...");
+              localStorage.removeItem("parklog_id"); // ✅ ล้าง parklog_id
+              return;
+          }
 
           // ถ้ามี session ที่ยังไม่ปิด ให้เปลี่ยนหน้าไปยัง status page
           if (!activeSession.empty) {
@@ -114,6 +187,7 @@ export default function ScanEntry() {
 
     checkAndFetchUserData();
 
+    
     // ตั้ง timer สำหรับ redirect ไปยังหน้าที่จอดรถถ้าเวลาหมด
     scanTimerRef.current = setInterval(() => {
       setTimeLeft((prevTime) => {
@@ -205,9 +279,20 @@ export default function ScanEntry() {
             <p className="text-lg font-semibold text-gray-700">
               Time left to scan: {formatTime(timeLeft)}
             </p>
+            <button
+            onClick={handleScanSuccess}
+            className={`w-full py-2 rounded-md transition duration-300 ${
+              isScanning
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600 text-white"
+            }`}
+            disabled={isScanning}
+          >
+            {isScanning ? "Processing..." : "Simulate QR Scan"}
+          </button>
           </div>
         </div>
-
+        
         {/* Popup สำหรับแจ้งเตือนการสแกนสำเร็จ */}
         {scanSuccess && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
