@@ -23,7 +23,7 @@ export default function ScanExit() {
   }); // เก็บข้อมูลผู้ใช้งาน
   const [exitScanData, setExitScanData] = useState(null); // เก็บข้อมูลการสแกน
   const [loading, setLoading] = useState(true); // สถานะการโหลดข้อมูล
-  const [timeLeft, setTimeLeft] = useState(1200); // เวลาที่เหลือในการสแกน QR Code
+  const [timeLeft, setTimeLeft] = useState(120); // เวลาที่เหลือในการสแกน QR Code
   const [scanSuccess, setScanSuccess] = useState(false); // สถานะการสแกนสำเร็จ
   const router = useRouter(); // ใช้สำหรับเปลี่ยนหน้า
   const unsubscribeRef = useRef(null); // ตัวอ้างอิงสำหรับ unsubscribe การเปลี่ยนแปลงข้อมูล Firestore
@@ -94,7 +94,7 @@ export default function ScanExit() {
         }
         return prevTime - 1;
       });
-    }, 10000);
+    }, 1000);
 
     // Cleanup function
     return () => {
