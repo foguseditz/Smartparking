@@ -35,6 +35,8 @@ export default function ScanEntry() {
   const unsubscribeRef = useRef(null); // ตัวแปรอ้างอิงสำหรับ unsubscribe การเปลี่ยนแปลงข้อมูล Firestore
   const hasRedirectedRef = useRef(false); // ตรวจสอบว่าได้เปลี่ยนหน้าแล้วหรือยัง
   const router = useRouter(); // ใช้สำหรับการเปลี่ยนหน้าใน Next.js
+  
+
 
   // useEffect สำหรับการตรวจสอบข้อมูลผู้ใช้งานและ subscribe การเปลี่ยนแปลงข้อมูลใน Firestore
   useEffect(() => {
