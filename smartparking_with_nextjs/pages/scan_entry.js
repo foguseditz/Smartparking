@@ -10,8 +10,6 @@ import {
   where,
   onSnapshot,
   doc,
-  setDoc,
-  addDoc,
 } from "firebase/firestore"; // นำเข้าฟังก์ชันสำหรับจัดการ Firestore
 import { db } from "@/pages/firebase/config"; // ไฟล์ config ของ Firebase
 import Head from "next/head"; // ใช้สำหรับตั้งค่า <head> ใน HTML
@@ -28,7 +26,6 @@ export default function ScanEntry() {
   const [loading, setLoading] = useState(true); // สถานะการโหลดข้อมูล
   const [timeLeft, setTimeLeft] = useState(120); // เวลาที่เหลือในการสแกน QR Code
   const [error, setError] = useState(""); // เก็บข้อความ error
-  const [isScanning, setIsScanning] = useState(false);
   const [scanSuccess, setScanSuccess] = useState(false); // เก็บสถานะการสแกนสำเร็จ
   const [countdown, setCountdown] = useState(1); // เวลานับถอยหลังก่อน redirect
   const scanTimerRef = useRef(null); // ตัวแปรอ้างอิงสำหรับตัวจับเวลา
@@ -39,71 +36,106 @@ export default function ScanEntry() {
   // useEffect สำหรับการตรวจสอบข้อมูลผู้ใช้งานและ subscribe การเปลี่ยนแปลงข้อมูลใน Firestore
   useEffect(() => {
     const checkAndFetchUserData = async () => {
-        try {
-            // ดึงข้อมูลผู้ใช้งานจาก localStorage
-            const userDataStr = localStorage.getItem("user");
-            if (!userDataStr) {
-                console.log("No user data in localStorage");
-                return;
-            }
-
-            // แปลงข้อมูลจาก JSON และตั้งค่า state ของข้อมูลผู้ใช้
-            const user = JSON.parse(userDataStr);
-            setUserData({
-                username: user.username || "",
-                email: user.email || "",
-                uid: user.uid || "",
-            });
-
-            if (user.uid) {
-                const parkingLogsRef = collection(db, "users", user.uid, "parking_logs");
-
-                // ✅ ค้นหา session ที่เปิดอยู่โดยเช็ค `start_time`
-                const activeSessionQuery = query(parkingLogsRef, where("start_time", "!=", null));
-                const activeSession = await getDocs(activeSessionQuery);
-
-                if (!activeSession.empty) {
-                    console.log("🚗 Active Parking Session Found, Redirecting to /status...");
-                    const activeParkingLog = activeSession.docs[0];
-                    localStorage.setItem("parklog_id", activeParkingLog.id);
-                    router.push("/status");
-                    return;
-                }
-
-                // ✅ Subscribe การเปลี่ยนแปลงใน Firestore
-                unsubscribeRef.current = onSnapshot(
-                    activeSessionQuery,
-                    (snapshot) => {
-                        if (!hasRedirectedRef.current) {
-                            snapshot.docChanges().forEach((change) => {
-                                if (change.type === "added") {
-                                    hasRedirectedRef.current = true;
-                                    const parklogId = change.doc.id;
-                                    localStorage.setItem("parklog_id", parklogId);
-                                    setScanSuccess(true);
-
-                                    setTimeout(() => {
-                                        router.push("/status");
-                                    }, 2000);
-                                }
-                            });
-                        }
-                    },
-                    (error) => {
-                        console.error("❌ Error listening to parking logs:", error);
-                    }
-                );
-            }
-        } catch (error) {
-            console.log("❌ Error processing user data:", error);
-        } finally {
-            setLoading(false);
+      try {
+        // ดึงข้อมูลผู้ใช้งานจาก localStorage
+        const userDataStr = localStorage.getItem("user");
+        if (!userDataStr) {
+          console.log("No user data in localStorage");
+          return;
         }
+
+        // แปลงข้อมูลจาก JSON และตั้งค่า state ของข้อมูลผู้ใช้
+        const user = JSON.parse(userDataStr);
+        setUserData({
+          username: user.username || "",
+          email: user.email || "",
+          uid: user.uid || "",
+        });
+
+        // ตรวจสอบว่าผู้ใช้งานมี session การจอดรถที่ยังไม่ปิดอยู่หรือไม่
+        if (user.uid) {
+          const parkingLogsRef = collection(
+            db,
+            "users",
+            user.uid,
+            "parking_logs"
+          );
+          const activeSessionQuery = query(
+            parkingLogsRef,
+            where("exit_time", "==", null)
+          );
+          const activeSession = await getDocs(activeSessionQuery);
+
+          // ถ้ามี session ที่ยังไม่ปิด ให้เปลี่ยนหน้าไปยัง status page
+          if (!activeSession.empty) {
+            const activeParkingLog = activeSession.docs[0];
+            localStorage.setItem("parklog_id", activeParkingLog.id);
+            router.push("/status");
+            return;
+          }
+
+          // Subscribe การเปลี่ยนแปลงใน Firestore ถ้าไม่มี session ที่เปิดอยู่
+          unsubscribeRef.current = onSnapshot(
+            activeSessionQuery,
+            (snapshot) => {
+              if (!hasRedirectedRef.current) {
+                snapshot.docChanges().forEach((change) => {
+                  if (change.type === "added") {
+                    hasRedirectedRef.current = true; // ตั้งค่าว่าได้ redirect แล้ว
+                    const parklogId = change.doc.id;
+                    localStorage.setItem("parklog_id", parklogId);
+                    setScanSuccess(true); // ตั้งค่าสถานะการสแกนสำเร็จ
+
+                    // นับถอยหลังก่อน redirect ไปยัง status page
+                    const countdownInterval = setInterval(() => {
+                      setCountdown((prevCountdown) => {
+                        if (prevCountdown <= 0) {
+                          clearInterval(countdownInterval);
+                          router.push("/status");
+                        }
+                        return prevCountdown - 0.5;
+                      });
+                    }, 500); // อัปเดตทุก 500ms
+                  }
+                });
+              }
+            },
+            (error) => {
+              console.error("Error listening to parking logs:", error);
+            }
+          );
+        }
+      } catch (error) {
+        console.log("Error processing user data:", error);
+      } finally {
+        setLoading(false); // ตั้งค่าสถานะว่าโหลดเสร็จแล้ว
+      }
     };
 
     checkAndFetchUserData();
-}, [router]);
 
+    // ตั้ง timer สำหรับ redirect ไปยังหน้าที่จอดรถถ้าเวลาหมด
+    scanTimerRef.current = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(scanTimerRef.current);
+          router.push("/parking_space");
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    // Cleanup function เพื่อ clear timer และ unsubscribe Firestore เมื่อ component ถูกทำลาย
+    return () => {
+      if (scanTimerRef.current) {
+        clearInterval(scanTimerRef.current);
+      }
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, [router]);
 
   // ฟังก์ชันสำหรับแปลงเวลาเป็นรูปแบบ mm:ss
   const formatTime = (seconds) => {
@@ -173,7 +205,6 @@ export default function ScanEntry() {
             <p className="text-lg font-semibold text-gray-700">
               Time left to scan: {formatTime(timeLeft)}
             </p>
-            
           </div>
         </div>
         

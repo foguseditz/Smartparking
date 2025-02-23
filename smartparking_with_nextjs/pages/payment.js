@@ -3,7 +3,7 @@ import Head from "next/head";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase/config";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore"; // นำเข้า updateDoc, increment เพิ่มเติม
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import "@tensorflow/tfjs"; // ✅ โหลด TensorFlow.js ก่อน
@@ -19,43 +19,43 @@ export default function Payment() {
   const [imagePreview, setImagePreview] = useState(null);
   const router = useRouter();
   const modelRef = useRef(null);
+  const [isModelLoaded, setIsModelLoaded] = useState(false);
 
   const loadModel = async () => {
     if (modelRef.current) {
       console.log("⚠️ Disposing old model...");
-      tf.disposeVariables(); // ✅ ล้างค่าตัวแปรที่โหลดค้างไว้
+      modelRef.current.dispose();
       modelRef.current = null;
+      tf.engine().reset(); // (ถ้าจำเป็น)
     }
-  
+
     const URL = `${window.location.origin}/my_model/`;
     const modelURL = `${URL}model.json`;
     const metadataURL = `${URL}metadata.json`;
-  
+
     try {
-      console.log("🔄 Loading model from:", modelURL);
+      console.log("Loading model from:", modelURL);
       modelRef.current = await tmImage.load(modelURL, metadataURL);
-      console.log("✅ Model loaded successfully");
+      setIsModelLoaded(true);
+      console.log("Model loaded successfully");
     } catch (error) {
-      console.error("❌ Failed to load model:", error);
+      console.error("Failed to load model:", error);
     }
   };
-  
-  
-  
 
   useEffect(() => {
     loadModel(); // ✅ โหลดโมเดลให้ถูกต้อง
-  
+
     const fetchData = async () => {
       const userData = localStorage.getItem("user");
       const parklogId = localStorage.getItem("parklog_id");
       if (!userData || !parklogId) return;
-  
+
       const user = JSON.parse(userData);
       const logDoc = await getDoc(
         doc(db, "users", user.uid, "parking_logs", parklogId)
       );
-  
+
       if (logDoc.exists()) {
         const logData = logDoc.data();
         setCheckInTime(
@@ -71,10 +71,9 @@ export default function Payment() {
         setTotalCost(logData.total_amount + " THB");
       }
     };
-  
+
     fetchData();
   }, []);
-  
 
   const handleFileChange = (event) => {
     const uploadedFile = event.target.files[0];
@@ -121,112 +120,106 @@ export default function Payment() {
 
   const handleUploadToServer = async () => {
     if (!file) {
-        alert("Please select a file first.");
-        return;
+      alert("Please select a file first.");
+      return;
     }
 
     const userData = localStorage.getItem("user");
     if (!userData) {
-        alert("User not found. Please log in.");
-        return;
+      alert("User not found. Please log in.");
+      return;
     }
 
-    const user = JSON.parse(userData);  // ✅ ดึง `uid` จาก localStorage
+    const user = JSON.parse(userData); // ✅ ดึง `uid` จาก localStorage
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-        const response = await fetch("http://localhost:5000/upload", {
-            method: "POST",
-            body: formData,
-            headers: {
-                "uid": user.uid, // ✅ ส่ง `uid` ใน headers
-            },
-        });
+      const response = await fetch("http://localhost:5000/upload", {
+        method: "POST",
+        body: formData,
+        headers: {
+          uid: user.uid, // ✅ ส่ง `uid` ใน headers
+        },
+      });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
 
-        const data = await response.json();
-        console.log("File uploaded successfully:", data.filePath);
-        setImagePreview(`http://localhost:5000${data.filePath}`); // ✅ แสดงภาพที่อัปโหลด
-
+      const data = await response.json();
+      console.log("File uploaded successfully:", data.filePath);
+      setImagePreview(`http://localhost:5000${data.filePath}`); // ✅ แสดงภาพที่อัปโหลด
     } catch (error) {
-        console.error("Upload failed:", error);
-        alert("Upload failed: " + error.message);
+      console.error("Upload failed:", error);
+      alert("Upload failed: " + error.message);
     }
-};
-
-
+  };
 
   const handlePaymentsFunctions = async (e) => {
-    e.preventDefault();  // ป้องกัน Form Reload
+    e.preventDefault(); // ป้องกัน Form Reload
 
-    await handleUploadToServer();  // อัปโหลดไฟล์ก่อน
-    await handlePaymentConfirmed(e);  // ยืนยันการชำระเงิน
-};
+    await handleUploadToServer(); // อัปโหลดไฟล์ก่อน
+    await handlePaymentConfirmed(e); // ยืนยันการชำระเงิน
+  };
 
-
-
-const handlePaymentConfirmed = async (e) => { 
-  e.preventDefault();
-  if (!file) {
+  const handlePaymentConfirmed = async (e) => {
+    e.preventDefault();
+    if (!file) {
       alert("Please attach the payment slip before confirming payment.");
       return;
-  }
+    }
 
-  // ตรวจสอบผล AI
-  const aiPass = await predictFromImage();
-  if (!aiPass) {
+    // ตรวจสอบผล AI
+    const aiPass = await predictFromImage();
+    if (!aiPass) {
       alert("Payment not confirmed, try with a new slip.");
       return;
-  }
+    }
 
-  try {
+    try {
       const userData = localStorage.getItem("user");
       const parklogId = localStorage.getItem("parklog_id");
       if (!userData || !parklogId) {
-          throw new Error("User or parking log ID not found.");
+        throw new Error("User or parking log ID not found.");
       }
 
       const user = JSON.parse(userData);
 
-      // ✅ เพิ่ม timestamp
-      const paymentTimestamp = new Date(); // บันทึกเวลาปัจจุบัน
+      // บันทึกเวลาที่ชำระเงินสำเร็จ
+      const paymentTimestamp = new Date();
 
+      // อัปเดตเฉพาะฟิลด์ที่เกี่ยวข้องกับการชำระเงินใน parking_logs ของ user
       await setDoc(
-          doc(db, "users", user.uid, "parking_logs", parklogId),
-          {
-              payment_status: true, // ✅ อัปเดต payment_status เป็น true
-              ai_prediction: prediction, // ✅ บันทึกผล AI
-              start_time: null, // ✅ ล้างค่า start_time
-              exit_time: null, // ✅ ล้างค่า exit_time
-              total_amount: 0, // ✅ ตั้งค่า total_amount = 0
-              payment_timestamp: paymentTimestamp, // ✅ บันทึก timestamp
-          },
-          { merge: true }
+        doc(db, "users", user.uid, "parking_logs", parklogId),
+        {
+          payment_status: true, // ยืนยันว่าชำระเงินแล้ว
+          ai_prediction: prediction, // บันทึกผลการทำนาย AI ที่คำนวณได้จริง
+          payment_timestamp: paymentTimestamp, // บันทึกเวลาในการชำระเงิน
+        },
+        { merge: true }
       );
 
-      setCheckInTime("N/A"); // อัปเดตค่าใน UI
-      setCheckOutTime("N/A");
-      setTotalCost("0 THB"); // ✅ แสดง total_amount เป็น 0
-      setShowAlert(true); // ✅ แสดง popup "Payment Successful"
+      // **อัปเดตลดจำนวนรถที่จอดลง 1 ในเอกสาร /parking/parkingDocId**
+      // สมมุติว่า parkingDocId ถูกเก็บไว้ใน localStorage หรือเป็นค่าคงที่
+      const parkingDocId =
+        localStorage.getItem("parking_doc_id") || "parkingDocId";
+      await updateDoc(doc(db, "parking", parkingDocId), {
+        carCount: increment(-1),
+      });
 
-      // ✅ ล้างค่า parklog_id และ Redirect ไปสแกน QR Code ใหม่
+      // แสดงสถานะการชำระเงินสำเร็จใน UI
+      setShowAlert(true);
+
+      // Redirect ไปหน้าหลักและล้าง parklog_id หลังจาก 2 วินาที
       setTimeout(() => {
-          router.push("/"); // ✅ ให้ไปที่หน้าสแกน QR Code ใหม่
+        router.push("/");
       }, 2000);
-
-  } catch (error) {
+    } catch (error) {
       console.error("❌ Error confirming payment:", error);
       alert("Payment confirmation failed. Please try again.");
-  }
-};
-
-
-
-
+    }
+  };
 
   return (
     <>
@@ -289,10 +282,11 @@ const handlePaymentConfirmed = async (e) => {
 
           <div className="mt-8 flex justify-end">
             <button
+              disabled={!isModelLoaded}
               onClick={(e) => handlePaymentsFunctions(e)}
               className="bg-green-600 px-6 py-2 text-white rounded-md"
             >
-              Payment Confirmed
+              {isModelLoaded ? "Payment Confirmed" : "Loading Model..."}
             </button>
           </div>
         </div>
