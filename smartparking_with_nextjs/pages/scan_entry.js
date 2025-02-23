@@ -103,8 +103,32 @@ export default function ScanEntry() {
         }
     };
 
+    
     checkAndFetchUserData();
+    
+    // ตั้ง timer สำหรับ redirect ไปยังหน้าที่จอดรถถ้าเวลาหมด
+    scanTimerRef.current = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(scanTimerRef.current);
+          router.push("/parking_space");
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    // Cleanup function เพื่อ clear timer และ unsubscribe Firestore เมื่อ component ถูกทำลาย
+    return () => {
+      if (scanTimerRef.current) {
+        clearInterval(scanTimerRef.current);
+      }
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
 }, [router]);
+
 
 
   // ฟังก์ชันสำหรับแปลงเวลาเป็นรูปแบบ mm:ss
