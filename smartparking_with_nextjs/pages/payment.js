@@ -6,11 +6,8 @@ import { db } from "./firebase/config";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
-
-// ใช้ dynamic import เพื่อโหลด Teachable Machine เฉพาะฝั่ง client
-const tmImage = dynamic(() => import("@teachablemachine/image"), {
-  ssr: false,
-});
+import "@tensorflow/tfjs"; // ✅ โหลด TensorFlow.js ก่อน
+import * as tmImage from "@teachablemachine/image";
 
 export default function Payment() {
   const [showAlert, setShowAlert] = useState(false);
@@ -23,17 +20,42 @@ export default function Payment() {
   const router = useRouter();
   const modelRef = useRef(null);
 
+  const loadModel = async () => {
+    if (modelRef.current) {
+      console.log("⚠️ Disposing old model...");
+      tf.disposeVariables(); // ✅ ล้างค่าตัวแปรที่โหลดค้างไว้
+      modelRef.current = null;
+    }
+  
+    const URL = `${window.location.origin}/my_model/`;
+    const modelURL = `${URL}model.json`;
+    const metadataURL = `${URL}metadata.json`;
+  
+    try {
+      console.log("🔄 Loading model from:", modelURL);
+      modelRef.current = await tmImage.load(modelURL, metadataURL);
+      console.log("✅ Model loaded successfully");
+    } catch (error) {
+      console.error("❌ Failed to load model:", error);
+    }
+  };
+  
+  
+  
+
   useEffect(() => {
+    loadModel(); // ✅ โหลดโมเดลให้ถูกต้อง
+  
     const fetchData = async () => {
       const userData = localStorage.getItem("user");
       const parklogId = localStorage.getItem("parklog_id");
       if (!userData || !parklogId) return;
-
+  
       const user = JSON.parse(userData);
       const logDoc = await getDoc(
         doc(db, "users", user.uid, "parking_logs", parklogId)
       );
-
+  
       if (logDoc.exists()) {
         const logData = logDoc.data();
         setCheckInTime(
@@ -49,27 +71,10 @@ export default function Payment() {
         setTotalCost(logData.total_amount + " THB");
       }
     };
-
-    // โหลดโมเดลอัตโนมัติเมื่อเปิดหน้า
-    const loadModel = async () => {
-      const URL = `${window.location.origin}/my_model/`;
-      const modelURL = `${URL}model.json`;
-      const metadataURL = `${URL}metadata.json`;
-
-      try {
-        console.log("Loading model from:", modelURL);
-        modelRef.current = await (
-          await import("@teachablemachine/image")
-        ).load(modelURL, metadataURL);
-        console.log("Model loaded successfully");
-      } catch (error) {
-        console.error("Failed to load model:", error);
-      }
-    };
-
+  
     fetchData();
-    loadModel();
   }, []);
+  
 
   const handleFileChange = (event) => {
     const uploadedFile = event.target.files[0];
@@ -174,15 +179,16 @@ const handlePaymentConfirmed = async (e) => {
   // ตรวจสอบผล AI
   const aiPass = await predictFromImage();
   if (!aiPass) {
-      alert("Payment not confirmed, try with new slip");
+      alert("Payment not confirmed, try with a new slip.");
       return;
   }
 
   try {
       const userData = localStorage.getItem("user");
       const parklogId = localStorage.getItem("parklog_id");
-      if (!userData || !parklogId)
-          throw new Error("User or parking log ID not found");
+      if (!userData || !parklogId) {
+          throw new Error("User or parking log ID not found.");
+      }
 
       const user = JSON.parse(userData);
 
@@ -196,25 +202,28 @@ const handlePaymentConfirmed = async (e) => {
               ai_prediction: prediction, // ✅ บันทึกผล AI
               start_time: null, // ✅ ล้างค่า start_time
               exit_time: null, // ✅ ล้างค่า exit_time
+              total_amount: 0, // ✅ ตั้งค่า total_amount = 0
               payment_timestamp: paymentTimestamp, // ✅ บันทึก timestamp
           },
           { merge: true }
       );
 
-      setCheckInTime("null"); // อัปเดตค่าใน UI
-      setCheckOutTime("null");
+      setCheckInTime("N/A"); // อัปเดตค่าใน UI
+      setCheckOutTime("N/A");
+      setTotalCost("0 THB"); // ✅ แสดง total_amount เป็น 0
       setShowAlert(true); // ✅ แสดง popup "Payment Successful"
 
       // ✅ ล้างค่า parklog_id และ Redirect ไปสแกน QR Code ใหม่
       setTimeout(() => {
-          router.push("/scan_exit"); // ✅ ให้ไปที่หน้าสแกน QR Code ใหม่
+          router.push("/"); // ✅ ให้ไปที่หน้าสแกน QR Code ใหม่
       }, 2000);
 
   } catch (error) {
-      console.error("Error confirming payment:", error);
+      console.error("❌ Error confirming payment:", error);
       alert("Payment confirmation failed. Please try again.");
   }
 };
+
 
 
 

@@ -164,7 +164,7 @@ export default function Status() {
       );
 
       setShowAlert(false);
-      router.push("/payment");
+      router.push("/scan_exit");
     } catch (error) {
       console.error("Error:", error);
       alert(error.message);
