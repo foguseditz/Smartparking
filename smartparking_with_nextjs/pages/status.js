@@ -137,7 +137,14 @@ export default function Status() {
       );
 
       // บันทึก exit_time และ total_amount ลงใน Firestore
-      
+      await setDoc(
+        doc(db, "users", user.uid, "parking_logs", parklogId),
+        {
+          exit_time: Timestamp.fromMillis(endTime),
+          total_amount: totalAmount,
+        },
+        { merge: true }
+      );
 
       const updatedLog = await getDoc(
         doc(db, "users", user.uid, "parking_logs", parklogId)
