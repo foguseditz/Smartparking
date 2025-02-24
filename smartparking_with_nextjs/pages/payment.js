@@ -200,18 +200,27 @@ export default function Payment() {
         { merge: true }
       );
 
-      // **อัปเดตลดจำนวนรถที่จอดลง 1 ในเอกสาร /parking/parkingDocId**
-      // สมมุติว่า parkingDocId ถูกเก็บไว้ใน localStorage หรือเป็นค่าคงที่
+      // ลดจำนวนรถที่จอดลง 1 ในเอกสาร /parking/parkingDocId
       const parkingDocId =
         localStorage.getItem("parking_doc_id") || "parkingDocId";
       await updateDoc(doc(db, "parking", parkingDocId), {
         carCount: increment(-1),
       });
 
+      // ลบ key ใน localStorage ที่เกี่ยวข้องกับ parking log
+      localStorage.removeItem("parklog_id");
+      localStorage.removeItem("payment_slip");
+      // (ถ้ามี key อื่นที่เกี่ยวข้อง สามารถลบเพิ่มได้)
+
+      // รีเซ็ต state ใน UI (ถ้าต้องการ)
+      setCheckInTime("N/A");
+      setCheckOutTime("N/A");
+      setTotalCost("0 THB");
+
       // แสดงสถานะการชำระเงินสำเร็จใน UI
       setShowAlert(true);
 
-      // Redirect ไปหน้าหลักและล้าง parklog_id หลังจาก 2 วินาที
+      // Redirect ไปหน้าหลักหลังจาก 2 วินาที
       setTimeout(() => {
         router.push("/");
       }, 2000);
