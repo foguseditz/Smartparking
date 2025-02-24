@@ -126,10 +126,10 @@ export default function Admin() {
             </p>
           </div>
         </div>
-        <div className="flex justify-center items-center p-3 mt-[8rem]">
+        <div className="flex justify-center items-center p-3 mt-24">
           <button
             onClick={() => setShowAlert(true)}
-            className="bg-white border-red-500 border-2 w-[25rem] max-md:w-[22rem] text-red-500 font-semibold py-2 px-4 rounded-md hover:bg-red-500 hover:text-white shadow-xl transition text-center"
+            className="bg-white border-red-500 border-2 w-[27rem] max-md:w-[24rem] text-red-500 font-semibold py-2 px-4 rounded-md hover:bg-red-500 hover:text-white shadow-xl transition text-center"
           >
             Sign out
           </button>

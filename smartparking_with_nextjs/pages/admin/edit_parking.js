@@ -180,7 +180,7 @@ export default function Edit_Parking() {
           {/* Parking Rate Section */}
           <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
             <p className="text-lg md:text-2xl font-medium">
-              Parking Rate: {parkingRate} Baht/Hour
+              Parking Rate: {parkingRate} Baht/Minute
             </p>
             {role === "admin" && (
               <div className="flex items-center space-x-2">

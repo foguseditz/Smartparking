@@ -103,6 +103,11 @@ export default function ScanExit() {
       <Head>
         <title>Exit Scan - Smart Parking</title>
       </Head>
+      <div className="text-center mt-5 md:mt-10">
+        <h1 className="text-xl md:text-2xl font-bold text-[#333333]">
+          Please scan to confirm exiting the parking area
+        </h1>
+      </div>
       <div className="flex flex-col items-center m-auto mt-5 mb-40 relative">
         <div className="bg-[#BAD0FD] rounded-full w-32 max-md:w-28 mt-8 relative z-20">
           <Image src="/account.png" alt="account" width={128} height={60} />

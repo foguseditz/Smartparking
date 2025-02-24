@@ -170,7 +170,12 @@ export default function ScanEntry() {
       <Head>
         <title>User - Smart Parking</title>
       </Head>
-      <div className="flex flex-col items-center m-auto mt-5 mb-40 relative">
+      <div className="text-center mt-5 md:mt-10">
+        <h1 className="text-xl md:text-2xl font-bold text-[#333333]">
+          Please scan to confirm parking entry
+        </h1>
+      </div>
+      <div className="flex flex-col items-center m-auto mb-40 relative">
         <div className="bg-[#BAD0FD] rounded-full w-32 max-md:w-28 mt-8 relative z-20">
           <Image src="/account.png" alt="account" width={128} height={60} />
         </div>
@@ -207,7 +212,7 @@ export default function ScanEntry() {
             </p>
           </div>
         </div>
-        
+
         {/* Popup สำหรับแจ้งเตือนการสแกนสำเร็จ */}
         {scanSuccess && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
