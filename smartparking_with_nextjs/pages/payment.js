@@ -3,13 +3,21 @@ import Head from "next/head";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase/config";
-import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore"; // นำเข้า updateDoc, increment เพิ่มเติม
+import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
-import "@tensorflow/tfjs"; // ✅ โหลด TensorFlow.js ก่อน
+
+import * as tf from "@tensorflow/tfjs";
 import * as tmImage from "@teachablemachine/image";
 
 export default function Payment() {
+  // --- State สำหรับ Popup แจ้งเตือน 2 กรณี ---
+  const [missingData, setMissingData] = useState(false);
+  const [missingDataMsg, setMissingDataMsg] = useState("");
+
+  const [missingExit, setMissingExit] = useState(false);
+  const [missingExitMsg, setMissingExitMsg] = useState("");
+
+  // --- State ปกติ ---
   const [showAlert, setShowAlert] = useState(false);
   const [file, setFile] = useState(null);
   const [checkInTime, setCheckInTime] = useState("...");
@@ -18,46 +26,54 @@ export default function Payment() {
   const [prediction, setPrediction] = useState("Didn't Confirm yet");
   const [imagePreview, setImagePreview] = useState(null);
   const router = useRouter();
+
   const modelRef = useRef(null);
   const [isModelLoaded, setIsModelLoaded] = useState(false);
 
-  const loadModel = async () => {
-    if (modelRef.current) {
-      console.log("⚠️ Disposing old model...");
-      modelRef.current.dispose();
-      modelRef.current = null;
-      tf.engine().reset(); // (ถ้าจำเป็น)
-    }
-
-    const URL = `${window.location.origin}/my_model/`;
-    const modelURL = `${URL}model.json`;
-    const metadataURL = `${URL}metadata.json`;
-
-    try {
-      console.log("Loading model from:", modelURL);
-      modelRef.current = await tmImage.load(modelURL, metadataURL);
-      setIsModelLoaded(true);
-      console.log("Model loaded successfully");
-    } catch (error) {
-      console.error("Failed to load model:", error);
-    }
-  };
-
   useEffect(() => {
-    loadModel(); // ✅ โหลดโมเดลให้ถูกต้อง
+    // ตรวจสอบ userData, parklogId
+    const userData = localStorage.getItem("user");
+    const parklogId = localStorage.getItem("parklog_id");
+
+    if (!userData || !parklogId) {
+      // กรณีไม่มี userData / parklogId
+      setMissingData(true);
+      setMissingDataMsg(
+        "Please confirm your parking entrance before making a payment."
+      );
+      return;
+    }
+
+    // ถ้ามี => ลองไปดึงข้อมูลใน Firestore
+    loadModel();
 
     const fetchData = async () => {
-      const userData = localStorage.getItem("user");
-      const parklogId = localStorage.getItem("parklog_id");
-      if (!userData || !parklogId) return;
+      try {
+        const user = JSON.parse(userData);
+        const docRef = doc(db, "users", user.uid, "parking_logs", parklogId);
+        const logDoc = await getDoc(docRef);
 
-      const user = JSON.parse(userData);
-      const logDoc = await getDoc(
-        doc(db, "users", user.uid, "parking_logs", parklogId)
-      );
+        if (!logDoc.exists()) {
+          // ถ้าไม่มี doc => ให้แจ้งเหมือนกรณีไม่มี user/parklog
+          setMissingData(true);
+          setMissingDataMsg(
+            "Parking log not found. Please confirm your parking usage again."
+          );
+          return;
+        }
 
-      if (logDoc.exists()) {
+        // ถ้ามี doc => ตรวจสอบ exit_time
         const logData = logDoc.data();
+        if (!logData.exit_time) {
+          // ยังไม่มี exit_time => ต้องสแกนออกก่อน
+          setMissingExit(true);
+          setMissingExitMsg(
+            "Please confirm your exit from the parking area first."
+          );
+          return;
+        }
+
+        // ถ้าทุกอย่างพร้อม => แสดงหน้า Payment ปกติ
         setCheckInTime(
           logData.start_time
             ? new Date(logData.start_time.toMillis()).toLocaleString()
@@ -68,32 +84,70 @@ export default function Payment() {
             ? new Date(logData.exit_time.toMillis()).toLocaleString()
             : "N/A"
         );
-        setTotalCost(logData.total_amount + " THB");
+        setTotalCost((logData.total_amount || 0) + " THB");
+      } catch (error) {
+        console.error("Error fetching parking log:", error);
       }
     };
 
     fetchData();
+
+    // Cleanup model on unmount
+    return () => {
+      if (modelRef.current) {
+        if (
+          modelRef.current.model &&
+          typeof modelRef.current.model.dispose === "function"
+        ) {
+          console.log("Disposing TF model inside Teachable Machine wrapper...");
+          modelRef.current.model.dispose();
+        }
+        tf.disposeVariables();
+        modelRef.current = null;
+      }
+    };
   }, []);
+
+  const loadModel = async () => {
+    try {
+      if (modelRef.current) {
+        console.log("Model already loaded. Skipping loadModel().");
+        return;
+      }
+
+      const URL = `${window.location.origin}/my_model/`;
+      const modelURL = `${URL}model.json`;
+      const metadataURL = `${URL}metadata.json`;
+
+      console.log("Loading model from:", modelURL);
+      modelRef.current = await tmImage.load(modelURL, metadataURL);
+      setIsModelLoaded(true);
+      console.log("Model loaded successfully");
+    } catch (error) {
+      console.error("Failed to load model:", error);
+    }
+  };
 
   const handleFileChange = (event) => {
     const uploadedFile = event.target.files[0];
     if (uploadedFile) {
       setFile(uploadedFile);
-
       const reader = new FileReader();
-      reader.readAsDataURL(uploadedFile); // แปลงเป็น Base64
+      reader.readAsDataURL(uploadedFile);
       reader.onload = () => {
-        localStorage.setItem("payment_slip", reader.result); // บันทึกใน Local Storage
+        localStorage.setItem("payment_slip", reader.result);
       };
-
-      setImagePreview(URL.createObjectURL(uploadedFile)); // แสดง Preview
+      setImagePreview(URL.createObjectURL(uploadedFile));
     }
   };
 
-  // ทำนายจากรูปภาพ
   const predictFromImage = async () => {
-    if (!file || !modelRef.current) {
+    if (!file) {
       alert("Please upload an image.");
+      return false;
+    }
+    if (!modelRef.current) {
+      alert("Model is not loaded yet.");
       return false;
     }
 
@@ -102,17 +156,15 @@ export default function Payment() {
       imageElement.src = URL.createObjectURL(file);
       imageElement.onload = async () => {
         const predictions = await modelRef.current.predict(imageElement);
+        console.log("Predictions:", predictions);
 
-        // ดึงค่าของ Class 1 และ Class 2
         const class1 = predictions.find((p) => p.className === "Class 1");
-        const class2 = predictions.find((p) => p.className === "Class 2");
-
         if (class1 && class1.probability >= 0.7) {
           setPrediction(`Class 1 - ${class1.probability.toFixed(2)}`);
-          resolve(true); // ✅ ผ่านการตรวจสอบ
+          resolve(true);
         } else {
-          setPrediction(`Its not look like slip `);
-          resolve(false); // ❌ ไม่ผ่านการตรวจสอบ
+          setPrediction("It's not look like slip");
+          resolve(false);
         }
       };
     });
@@ -123,14 +175,13 @@ export default function Payment() {
       alert("Please select a file first.");
       return;
     }
-
     const userData = localStorage.getItem("user");
     if (!userData) {
       alert("User not found. Please log in.");
       return;
     }
+    const user = JSON.parse(userData);
 
-    const user = JSON.parse(userData); // ✅ ดึง `uid` จาก localStorage
     const formData = new FormData();
     formData.append("file", file);
 
@@ -139,7 +190,7 @@ export default function Payment() {
         method: "POST",
         body: formData,
         headers: {
-          uid: user.uid, // ✅ ส่ง `uid` ใน headers
+          uid: user.uid,
         },
       });
 
@@ -149,28 +200,19 @@ export default function Payment() {
 
       const data = await response.json();
       console.log("File uploaded successfully:", data.filePath);
-      setImagePreview(`http://localhost:5000${data.filePath}`); // ✅ แสดงภาพที่อัปโหลด
+      setImagePreview(`http://localhost:5000${data.filePath}`);
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Upload failed: " + error.message);
     }
   };
 
-  const handlePaymentsFunctions = async (e) => {
-    e.preventDefault(); // ป้องกัน Form Reload
-
-    await handleUploadToServer(); // อัปโหลดไฟล์ก่อน
-    await handlePaymentConfirmed(e); // ยืนยันการชำระเงิน
-  };
-
-  const handlePaymentConfirmed = async (e) => {
-    e.preventDefault();
+  const handlePaymentConfirmed = async () => {
     if (!file) {
       alert("Please attach the payment slip before confirming payment.");
       return;
     }
 
-    // ตรวจสอบผล AI
     const aiPass = await predictFromImage();
     if (!aiPass) {
       alert("Payment not confirmed, try with a new slip.");
@@ -183,44 +225,33 @@ export default function Payment() {
       if (!userData || !parklogId) {
         throw new Error("User or parking log ID not found.");
       }
-
       const user = JSON.parse(userData);
 
-      // บันทึกเวลาที่ชำระเงินสำเร็จ
       const paymentTimestamp = new Date();
 
-      // อัปเดตเฉพาะฟิลด์ที่เกี่ยวข้องกับการชำระเงินใน parking_logs ของ user
       await setDoc(
         doc(db, "users", user.uid, "parking_logs", parklogId),
         {
-          payment_status: true, // ยืนยันว่าชำระเงินแล้ว
-          ai_prediction: prediction, // บันทึกผลการทำนาย AI ที่คำนวณได้จริง
-          payment_timestamp: paymentTimestamp, // บันทึกเวลาในการชำระเงิน
+          payment_status: true,
+          payment_timestamp: paymentTimestamp,
         },
         { merge: true }
       );
 
-      // ลดจำนวนรถที่จอดลง 1 ในเอกสาร /parking/parkingDocId
       const parkingDocId =
         localStorage.getItem("parking_doc_id") || "parkingDocId";
       await updateDoc(doc(db, "parking", parkingDocId), {
         carCount: increment(-1),
       });
 
-      // ลบ key ใน localStorage ที่เกี่ยวข้องกับ parking log
       localStorage.removeItem("parklog_id");
       localStorage.removeItem("payment_slip");
-      // (ถ้ามี key อื่นที่เกี่ยวข้อง สามารถลบเพิ่มได้)
 
-      // รีเซ็ต state ใน UI (ถ้าต้องการ)
       setCheckInTime("N/A");
       setCheckOutTime("N/A");
       setTotalCost("0 THB");
-
-      // แสดงสถานะการชำระเงินสำเร็จใน UI
       setShowAlert(true);
 
-      // Redirect ไปหน้าหลักหลังจาก 2 วินาที
       setTimeout(() => {
         router.push("/");
       }, 2000);
@@ -230,6 +261,56 @@ export default function Payment() {
     }
   };
 
+  const handlePaymentsFunctions = async (e) => {
+    e.preventDefault();
+    await handleUploadToServer();
+    await handlePaymentConfirmed();
+  };
+  // ----------------------------------------------------------------------------
+  // JSX: ถ้า missingData => Popup #1
+  // ----------------------------------------------------------------------------
+  if (missingData) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-auto">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Notice</h3>
+          <p className="text-gray-500 mb-4">{missingDataMsg}</p>
+          <div className="flex justify-end">
+            <button
+              onClick={() => router.push("/parking_space")}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ถ้า missingExit => Popup #2
+  if (missingExit) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-auto">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Notice</h3>
+          <p className="text-gray-500 mb-4">{missingExitMsg}</p>
+          <div className="flex justify-end">
+            <button
+              onClick={() => router.push("/status")}
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ----------------------------------------------------------------------------
+  // JSX: ปกติถ้าผ่านเงื่อนไขทั้งหมด
+  // ----------------------------------------------------------------------------
   return (
     <>
       <Head>
@@ -286,13 +367,13 @@ export default function Payment() {
           )}
 
           <p className="mt-4 text-lg font-semibold">
-            {showAlert ? "✅ Payment Confirmed" : ` ${prediction}`}
+            {showAlert ? "✅ Payment Confirmed" : prediction}
           </p>
 
           <div className="mt-8 flex justify-end">
             <button
               disabled={!isModelLoaded}
-              onClick={(e) => handlePaymentsFunctions(e)}
+              onClick={handlePaymentsFunctions}
               className="bg-green-600 px-6 py-2 text-white rounded-md"
             >
               {isModelLoaded ? "Payment Confirmed" : "Loading Model..."}

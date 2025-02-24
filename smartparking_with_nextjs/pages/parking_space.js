@@ -16,14 +16,17 @@ export default function Parking_space() {
   const [showModal, setShowModal] = useState(false); // เพิ่ม state สำหรับปิด/เปิดป๊อปอัพ
 
   useEffect(() => {
-    // อ้างอิงเอกสาร Firestore
     const parkingDocRef = doc(db, "parking", "parkingDocId");
 
     const unsubscribe = onSnapshot(parkingDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setCarCount(data.carCount || 0);
-        setTotalSpaces(data.totalSpaces || 0);
+        // เพิ่มการ clamp (Math.max(0, value))
+        const currentCarCount = Math.max(0, data.carCount || 0);
+        const currentTotalSpaces = Math.max(0, data.totalSpaces || 0);
+
+        setCarCount(currentCarCount);
+        setTotalSpaces(currentTotalSpaces);
         setParkingRate(data.parkingRate || 0);
       } else {
         setError("Parking data not found!");
@@ -34,7 +37,7 @@ export default function Parking_space() {
       setLoading(false);
     });
 
-    return () => unsubscribe(); // Cleanup listener
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
