@@ -32,6 +32,8 @@ export default function ScanEntry() {
   const unsubscribeRef = useRef(null); // ตัวแปรอ้างอิงสำหรับ unsubscribe การเปลี่ยนแปลงข้อมูล Firestore
   const hasRedirectedRef = useRef(false); // ตรวจสอบว่าได้เปลี่ยนหน้าแล้วหรือยัง
   const router = useRouter(); // ใช้สำหรับการเปลี่ยนหน้าใน Next.js
+  
+
 
   // useEffect สำหรับการตรวจสอบข้อมูลผู้ใช้งานและ subscribe การเปลี่ยนแปลงข้อมูลใน Firestore
   useEffect(() => {
@@ -112,7 +114,33 @@ export default function ScanEntry() {
       }
     };
 
+    
     checkAndFetchUserData();
+
+    
+    // ตั้ง timer สำหรับ redirect ไปยังหน้าที่จอดรถถ้าเวลาหมด
+    scanTimerRef.current = setInterval(() => {
+      setTimeLeft((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(scanTimerRef.current);
+          router.push("/parking_space");
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    // Cleanup function เพื่อ clear timer และ unsubscribe Firestore เมื่อ component ถูกทำลาย
+    return () => {
+      if (scanTimerRef.current) {
+        clearInterval(scanTimerRef.current);
+      }
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+}, [router]);
+
 
     // ตั้ง timer สำหรับ redirect ไปยังหน้าที่จอดรถถ้าเวลาหมด
     scanTimerRef.current = setInterval(() => {
@@ -136,6 +164,7 @@ export default function ScanEntry() {
       }
     };
   }, [router]);
+
 
   // ฟังก์ชันสำหรับแปลงเวลาเป็นรูปแบบ mm:ss
   const formatTime = (seconds) => {
