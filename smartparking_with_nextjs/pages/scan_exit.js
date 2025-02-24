@@ -34,88 +34,24 @@ export default function ScanExit() {
   };
 
   // useEffect สำหรับดึงข้อมูลจาก localStorage
-  // useEffect สำหรับ subscribe ข้อมูลจาก Firestore และอัปเดต exit_time + total_amount
-useEffect(() => {
-  if (!exitScanData || !userData.uid) return; // ถ้าไม่มีข้อมูล exitScanData หรือ userData ให้ return ออกไป
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const exitScanData = JSON.parse(localStorage.getItem("exitScanData")); // ดึงข้อมูล exitScanData จาก localStorage
+      const userData = JSON.parse(localStorage.getItem("user")); // ดึงข้อมูล userData จาก localStorage
 
-  // อ้างอิงถึงเอกสารของ parking_logs ใน Firestore
-  const parklogDoc = doc(
-    db,
-    "users",
-    userData.uid,
-    "parking_logs",
-    exitScanData.originalParklogId
-  );
+      // ปริ้นข้อมูลที่ดึงมาใน console
+      console.log("exitScanData:", exitScanData);
+      console.log("userData:", userData);
 
-  // Subscribe การเปลี่ยนแปลงของ parking log
-  unsubscribeRef.current = onSnapshot(parklogDoc, async (snapshot) => {
-    if (snapshot.exists()) {
-      const parkingData = snapshot.data();
-
-      // เช็คว่ามีการตั้งค่า exit_time หรือยัง
-      if (!parkingData.exit_time) {
-        const exitTimestamp = new Date(); // เวลาปัจจุบันเป็น exit_time
-
-        // คำนวณค่าจอดรถ (ตัวอย่างคิด 10 บาท/ชั่วโมง)
-        const startTime = parkingData.start_time?.toMillis();
-        const exitTime = exitTimestamp.getTime();
-        let totalAmount = 0;
-
-        if (startTime) {
-          const durationHours = Math.ceil((exitTime - startTime) / (1000 * 60 * 60)); // แปลง ms เป็นชั่วโมง
-          totalAmount = durationHours * 10; // สมมติคิด 10 บาท/ชั่วโมง
-        }
-
-        try {
-          await setDoc(
-            parklogDoc,
-            {
-              exit_time: exitTimestamp, // บันทึกเวลาออกจากที่จอดรถ
-              total_amount: totalAmount, // บันทึกค่าใช้จ่าย
-              exit_scan_confirmed: true, // ยืนยันการสแกนออก
-            },
-            { merge: true }
-          );
-
-          console.log("✅ Exit time and total amount saved!");
-        } catch (error) {
-          console.error("❌ Failed to save exit time and total amount:", error);
-        }
-      }
-
-      // ตรวจสอบว่าทุกค่าพร้อมแล้วให้เปลี่ยนไปหน้า Payment
-      if (parkingData.exit_time && parkingData.exit_scan_confirmed) {
-        setScanSuccess(true); // ตั้งค่าสถานะการสแกนสำเร็จ
-
-        setTimeout(() => {
-          console.log("Removing exitScanData from localStorage...");
-          localStorage.removeItem("exitScanData"); // ลบข้อมูล exitScanData จาก localStorage
-          router.push("/payment"); // เปลี่ยนหน้าไปยัง payment page
-        }, 2000);
+      if (exitScanData && userData) {
+        setUserData(userData); // ตั้งค่า state ของข้อมูลผู้ใช้
+        setExitScanData(exitScanData); // ตั้งค่า state ของข้อมูลการสแกน
+        setLoading(false); // เปลี่ยนสถานะ loading เมื่อข้อมูลถูกโหลด
+      } else {
+        router.push("/parking_space"); // ถ้าไม่มีข้อมูล ให้เปลี่ยนหน้าไปที่หน้า parking_space
       }
     }
-  });
-
-  // ตัวจับเวลาหมดเวลา (120 วินาที) ก่อนจะเปลี่ยนหน้า
-  const timer = setInterval(() => {
-    setTimeLeft((prevTime) => {
-      if (prevTime <= 0) {
-        clearInterval(timer);
-        router.push("/parking_space");
-        return 0;
-      }
-      return prevTime - 1;
-    });
-  }, 1000);
-
-  // Cleanup function
-  return () => {
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current(); // ยกเลิกการ subscribe ข้อมูล
-    }
-    clearInterval(timer); // ยกเลิกตัวจับเวลา
-  };
-}, [exitScanData, userData, router]);
+  }, [router]);
 
   // useEffect สำหรับ subscribe ข้อมูลจาก Firestore
   useEffect(() => {
