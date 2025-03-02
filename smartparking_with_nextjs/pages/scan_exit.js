@@ -79,7 +79,7 @@ export default function ScanExit() {
       setTimeLeft((prevTime) => {
         if (prevTime <= 0) {
           clearInterval(timer);
-          router.push("/parking_space");
+          router.push("/status");
           return 0;
         }
         return prevTime - 1;

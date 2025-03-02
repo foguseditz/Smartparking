@@ -320,7 +320,7 @@ export default function Payment() {
         <div className="mt-10 mx-auto max-w-[350px] bg-[#BAD0FD] rounded-md shadow-lg max-sm:w-56">
           <div className="w-full p-3 flex justify-center">
             <Image
-              src="/qrpayment.png"
+              src="/real_qr_payment.jpg"
               alt="QR Payment"
               width={300}
               height={90}
